@@ -12,15 +12,15 @@ with this source code in the file LICENSE.
 
 #include <linux/input.h>
 
-//Gamepad_events:
+//gamepad_events:
 int get_event(struct input_event *, unsigned char);
 
-//Simple_serial:
+//simple_serial:
 int open_port(char *);
 unsigned char read_char(int);
 void print_char(int fd, unsigned char);
 
-//Simple_uinput:
+//simple_uinput:
 int open_uinput(void);
 void setup_uinput(int, char *);
 
