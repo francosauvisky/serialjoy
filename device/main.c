@@ -20,19 +20,18 @@ perror(str); \
 exit(EXIT_FAILURE); \
 } while(0)
 
+#define MAX_DEV 4
+
 int
 main(int argc, char *argv[])
 {
-	int serial_fd, uinput_fd;
+	int serial_fd, uinput_fd[MAX_DEV] = {0};
+	struct input_event ev, sync;
 
 	if(access(argv[argc - 1], F_OK) == -1)
 		die("error: access/main");
 
 	serial_fd = open_port(argv[argc - 1]);
-	uinput_fd = open_uinput();
-	setup_uinput(uinput_fd, "serialjoy");
-
-	struct input_event ev, sync;
 
 	memset(&sync, 0, sizeof(struct input_event));
 	sync.type = EV_SYN;
@@ -49,3 +48,47 @@ main(int argc, char *argv[])
 		}
 	}
 }
+
+
+// uinput_fd = open_uinput();
+// setup_uinput(uinput_fd, "serialjoy");
+
+/*
+# Communications protocol sketch:
+
+- Valid characters: Every printable character (0x20 up to 0x7E)
+- Packets size: Strings from 2 to 8 chars. If more is need, then send multi-packets signals.
+
+## Packet formats:
+
+- From adapter to device:
+
+"$": Return "#" for handshake
+"!n", where n = [0..9]: Create device n
+"^n", where n = [0..9]: Destroy device n
+"a", where a = [a..zA..Z]: Send simple action a to device 0
+"na", where n = [0..9] and a = [a..zA..Z]: Send simple action a to device n
+"n:axx" where n = [0..9], a = [a..zA..Z] and each x = [0x40..0x5F]: Send complex action xxxx to device n
+"s" where s is a null-terminated string: Returning preprogrammed string (only if device asks)
+
+- From device to adapter:
+
+"&": Return "%" for handshake
+"d": Force to create devices
+"v": Return preprogrammed string
+
+## Simple actions:
+
+[a..z]: Buttons presses (up to 26 buttons)
+[A..Z]: Buttons relase (up to 26 buttons)
+
+## Complex actions "axxx":
+
+- First char:
+
+[a..zA..Z]: Action code (defined afterwards), for example analog axis
+
+- Second and third chars:
+
+[0x40..0x5F][0x40..0x5F]: Action data (first 5 bits of each char) = 10 bits
+*/
