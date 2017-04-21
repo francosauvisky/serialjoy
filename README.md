@@ -1,8 +1,8 @@
 # Serialjoy
 
-Note that this program is still on an early stage, there is a lot more to do.
+Note that this program is still on an early stage, there is a **lot** more to do. The only supported gamepad is the SEGA Genesis controller, currently (although it's simple to adapt to other controllers).
 
-## What this is?
+## What is this?
 
 Serialjoy is a generic and hobbist-friendly adapter of joysticks/gamepads on Linux using serial ports. That means you can program any sort of microcontroller or similar devices, for example an Arduino, to interface with a game controller (even one that you made! That's why it's generic), then send the data via a serial port and they will be able to emulate joystick buttons, keyboard keys, analog axes & more on your computer. This way you can cut a lot of time and complexity from using the USB protocol for such devices (that's why it's hobbist-friendly), and it's quite more flexible.
 
@@ -14,5 +14,6 @@ The *adapter* is the physical layer that interfaces with a game controller and s
 
 The *device* is the software that your computer will be running when the *adapter* is connected. It will translate the data received on the serial port to a virtual joystick using `uinput`, allowing you to generate real input events with your physical controller.
 
-## TODO
+## To do
 
+- Todo list
