@@ -124,11 +124,13 @@ main(int argc, char *argv[])
 
 			if(nullcount >= 10)
 			{
+				#ifndef LEGACY
 				if(check_conn(serial_fd) != 0)
 				{
 					fprintf(stderr, "error: check_conn/main\n");
 					exit(EXIT_FAILURE);
 				}
+				#endif
 			}
 		}
 	}
