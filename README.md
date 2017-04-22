@@ -21,9 +21,9 @@ The *device* is the software that your computer will be running when the *adapte
 - Add multiple controllers/devices with a single serial port
 - Use a simpler received data <-> input action dictionary, not a switch statement within a function within a *.c file (maybe with #define or an external configuration file)
 - Use commands from the adapter to control the device (for example, to add another controller, or to close the device)
-- Use argp or getopt to read the command-line arguments
 - Add analog axes and more buttons compatibility (using data packets)
 (the last 3 items can be summarized in: use a better data transmission protocol)
+- Use argp or getopt to read the command-line arguments
 - (far) Automatic identification of the serial port
 - (far) Automatic service which runs the program when an adapter is detected
 
