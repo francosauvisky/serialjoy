@@ -76,16 +76,22 @@ main(int argc, char *argv[])
 			int device_n = dpkg.device - '0';
 			char dev_name[20];
 
-			sprintf(dev_name, "serialjoy%01d", device_n);
-			setup_uinput(gamepad[device_n].fd, dev_name);
-			gamepad[device_n].status = 1;
+			if(gamepad[device_n].status == 0)
+			{
+				sprintf(dev_name, "serialjoy%01d", device_n);
+				setup_uinput(gamepad[device_n].fd, dev_name);
+				gamepad[device_n].status = 1;
+			}
 		}
 		else if(dpkg.type == 2 && dpkg.device >= '0' && dpkg.device <= '9') // Device destroy
 		{
 			int device_n = dpkg.device - '0';
 
-			destroy_uinput(gamepad[device_n].fd);
-			gamepad[device_n].status = 0;
+			if(gamepad[device_n].status == 1)
+			{
+				destroy_uinput(gamepad[device_n].fd);
+				gamepad[device_n].status = 0;
+			}
 		}
 		else if(dpkg.type == 3 && dpkg.a_data != 0) // Send data to device 0
 		{
@@ -139,6 +145,7 @@ main(int argc, char *argv[])
 					exit(EXIT_FAILURE);
 				}
 				nullcount = 0;
+				check_flag = 1;
 			}
 		}
 
