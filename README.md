@@ -30,6 +30,7 @@ The *device* is the software that your computer will be running when the *adapte
 ### Adapter
 
 - Add a second controller [Done!]
+- Simplify the controller drivers (de-hardwire them)
 - Automatic identification of the controller (s)
 - Better control of the device: initializing and closing controllers, etc
 - More generic code: using structs for the status, analog axis, etc
