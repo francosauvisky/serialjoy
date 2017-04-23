@@ -13,8 +13,7 @@ serialjoy: main.c gamepad_events.o simple_serial.o simple_uinput.o defs.h
 	gcc main.c -o serialjoy gamepad_events.o simple_serial.o simple_uinput.o
 
 clean: 
-	mkdir -p .trash
-	mv -fb *.o ./.trash
+	rm *.o
 
 tar: $(wildcard *.c) $(wildcard *.h) Makefile
 	tar --create --file serialjoy.tar.gz --gzip $^

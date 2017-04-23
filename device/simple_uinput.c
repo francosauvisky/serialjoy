@@ -74,5 +74,14 @@ setup_uinput(int ufd, char *dev_name)
 
 	if(write(ufd, &uidev, sizeof(uidev)) < 0)
 		die("error: write/setup_uinput");
-	ioctl(ufd, UI_DEV_CREATE);
+
+	if(ioctl(ufd, UI_DEV_CREATE) < 0)
+		die("error: ioctl/setup_uinput");
+}
+
+void
+destroy_uinput(int ufd)
+{
+	if(ioctl(ufd, UI_DEV_DESTROY) < 0)
+		die("error: ioctl/setup_uinput");
 }

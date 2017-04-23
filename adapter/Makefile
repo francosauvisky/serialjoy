@@ -6,9 +6,9 @@ hfuse = D9
 
 OPTIMIZE = Os
 
-DEPENDS = genesis.c
+MODULES = genesis.o genesis2.o uart_helper.o
 
-all: $(PGR).hex $(PGR)_eeprom.hex $(PGR).map $(PGR).lst
+all: $(PGR).hex $(PGR)_eeprom.hex $(PGR).map
 
 full: all prog pon
 
@@ -18,14 +18,17 @@ $(PGR).hex: $(PGR).elf
 $(PGR)_eeprom.hex: $(PGR).elf
 	avr-objcopy -j .eeprom --change-section-lma .eeprom=0 -O ihex $(PGR).elf $(PGR)_eeprom.hex
 
-$(PGR).lst: $(PGR).elf
-	avr-objdump -h -S $(PGR).elf > $(PGR).lst
+#$(PGR).lst: $(PGR).elf
+#	avr-objdump -h -S $(PGR).elf > $(PGR).lst
 
-$(PGR).elf $(PGR).map: $(PGR).o
-	avr-gcc -g -mmcu=$(MCU_TARGET) -Wl,-Map,$(PGR).map -o $(PGR).elf $(PGR).o
+$(PGR).elf $(PGR).map: $(PGR).o $(MODULES)
+	avr-gcc -g -mmcu=$(MCU_TARGET) -Wl,-Map,$(PGR).map -o $(PGR).elf $(PGR).o $(MODULES)
 
-$(PGR).o: $(PGR).c $(DEPENDS)
+$(PGR).o: $(PGR).c
 	avr-gcc -g -$(OPTIMIZE) -mmcu=$(MCU_TARGET) -c $(PGR).c
+
+$(MODULES): %.o: %.c
+	avr-gcc -g -$(OPTIMIZE) -mmcu=$(MCU_TARGET) -c $<
 
 .PHONY: prog_lfuse prog_hfuse pon poff clean tar
 
@@ -52,8 +55,7 @@ poff:
 	pk2cmd -P PIC16F630
 
 clean: 
-	mkdir -p .trash
-	mv -fb *.elf *.hex *.lst *.map *.o ./.trash
+	rm *.elf *.hex *.map *.o #.lst
 
 tar: $(wildcard *.c) $(wildcard *.h) Makefile
 	tar --create --file $(PGR).tar.gz --gzip $^

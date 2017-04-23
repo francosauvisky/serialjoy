@@ -9,79 +9,52 @@ with this source code in the file LICENSE.md
 
 #include <avr/io.h>
 
+#include "genesis.h"
+#include "genesis2.h"
+#include "uart_helper.h"
+
 #define F_CPU 8000000UL
 #include <util/delay.h>
-
-#define BAUD 38400
-#include <util/setbaud.h>
-void
-setup_uart(void)
-{
-	UBRRH = UBRRH_VALUE; // Sets UART baudrate value detemined by setbaud.h
-	UBRRL = UBRRL_VALUE;
-	#if USE_2X
-	UCSRA |= (1 << U2X); // Use 2x prescaler if needed
-	#else
-	UCSRA &= ~(1 << U2X);
-	#endif
-	UCSRB |= _BV(TXEN); // Enables UART TX and RX
-	UCSRB |= _BV(RXEN);
-}
-
-void
-uart_print(const char *string) // Simple function for printing a string
-{
-	for (; *string; string++)
-	{
-		loop_until_bit_is_set(UCSRA, UDRE);
-		UDR = *string;
-	}
-}
-
-void
-uart_print_bin(uint8_t num) // Simple function for printing a 8-bit number in decimal base
-{
-	for(uint8_t i = 0; i < 8; i++)
-	{
-		loop_until_bit_is_set(UCSRA, UDRE);
-		UDR = '0' + ((num >> (7 - i)) % 2);
-	}
-}
-
-void
-uart_print_long_bin(uint16_t num) // Simple function for printing a 8-bit number in decimal base
-{
-	for(uint8_t i = 0; i < 16; i++)
-	{
-		loop_until_bit_is_set(UCSRA, UDRE);
-		UDR = '0' + ((num >> (15 - i)) % 2);
-	}
-}
-
-#include "genesis.c"
 
 void
 main (void)
 {
-	uint16_t state, ostate;
+	uint16_t state, ostate, state2, ostate2;
 
 	setup_uart();
-	genesis_setup();
 
-	DDRD |= _BV(PD5); // for checking frequency
+	genesis_setup();
+	genesis2_setup();
 
 	ostate = genesis_get_state();
+	ostate2 = genesis2_get_state();
 
 	while(1)
 	{
 		state = genesis_get_state();
+		state2 = genesis2_get_state();
 
-		state_comp(state,ostate);
+		state_comp(state, ostate, 0);
+		state_comp(state2, ostate2, 1);
 
 		ostate = state;
+		ostate2 = state2;
 
 		_delay_ms(2);
 
-		PORTD ^= _BV(PD5);
+		unsigned char recv = read_nb_char();
+		if(recv != 0)
+		{
+			if(recv == '?')
+			{
+				loop_until_bit_is_set(UCSRA, UDRE);
+				UDR = '#';
+			}
+			else if(recv == 'd')
+			{
+				genesis_setup();
+				genesis2_setup();
+			}
+		}
 	}
 }
