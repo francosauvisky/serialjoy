@@ -21,7 +21,7 @@ exit(EXIT_FAILURE); \
 } while(0)
 
 #define MAX_DEV 10
-#define LEGACY
+// #define LEGACY
 
 struct uinput_controller
 {
@@ -32,7 +32,7 @@ struct uinput_controller
 int
 main(int argc, char *argv[])
 {
-	int serial_fd, runflag, nullcount = 0;
+	int serial_fd, runflag, nullcount = 0, check_flag = 0;
 	struct input_event ev, sync;
 	struct uinput_controller gamepad[MAX_DEV];
 
@@ -56,6 +56,15 @@ main(int argc, char *argv[])
 	sync.code = 0;
 	sync.value = 0;
 
+	if(check_conn(serial_fd) == 0)
+	{
+		check_flag = 1;
+	}
+	else
+	{
+		fprintf(stderr, "warning: check_conn/main\n");
+	}
+
 	runflag = 1;
 	while(runflag == 1)
 	{
@@ -67,7 +76,7 @@ main(int argc, char *argv[])
 			int device_n = dpkg.device - '0';
 			char dev_name[20];
 
-			sprintf(dev_name, "serialjoy%d", device_n);
+			sprintf(dev_name, "serialjoy%01d", device_n);
 			setup_uinput(gamepad[device_n].fd, dev_name);
 			gamepad[device_n].status = 1;
 		}
@@ -118,20 +127,28 @@ main(int argc, char *argv[])
 		{
 			// Still unimplemented
 		}
-		else if(dpkg.type == 0) // Not received any data
+		else // Not received any valid data
 		{
 			nullcount++;
 
-			if(nullcount >= 10)
+			if(nullcount > 10)
 			{
-				#ifndef LEGACY
 				if(check_conn(serial_fd) != 0)
 				{
 					fprintf(stderr, "error: check_conn/main\n");
 					exit(EXIT_FAILURE);
 				}
-				#endif
+				nullcount = 0;
 			}
+		}
+
+		if(dpkg.type != 0)
+			nullcount = 0;
+
+		if(check_flag == 1)
+		{
+			print_char(serial_fd, 'd');
+			check_flag = 0;
 		}
 	}
 }

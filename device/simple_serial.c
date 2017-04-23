@@ -116,13 +116,13 @@ read_packet(struct data_packet *data, int fd)
 		(*data).type = 2;
 		(*data).device = read_char(fd);
 	}
-	else if(buff >= '0' && buff <= '9')
+	else if((buff >= '0') && (buff <= '9'))
 	{
 		(*data).device = buff;
 
 		buff = read_char(fd);
 
-		if(buff = ':')
+		if(buff == ':')
 		{
 			(*data).type = 5;
 			(*data).a_data = read_char(fd);
@@ -156,11 +156,12 @@ check_conn(int fd)
 
 		if(rcv == '#')
 			nconn = 0;
+		else
+			sleep(1);
 
 		if(++count == 30)
 			nconn = -1;
 
-		sleep(1);
 	}
 
 	return nconn;

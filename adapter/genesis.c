@@ -133,7 +133,7 @@ genesis_setup(void)
 		return;
 	}
 
-	uart_print(":0");
+	uart_print("!0");
 
 	if((data_tri & 0x0F) == 0x00)
 	{
