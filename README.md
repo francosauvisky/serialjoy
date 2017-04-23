@@ -18,7 +18,7 @@ The *device* is the software that your computer will be running when the *adapte
 
 ### Device
 
-- Add multiple controllers/devices with a single serial port
+- Add multiple controllers/devices with a single serial port [Done!]
 - Use a simpler received data <-> input action dictionary, not a switch statement within a function within a *.c file (maybe with #define or an external configuration file)
 - Use commands from the adapter to control the device (for example, to add another controller, or to close the device)
 - Add analog axes and more buttons compatibility (using data packets)
@@ -29,7 +29,7 @@ The *device* is the software that your computer will be running when the *adapte
 
 ### Adapter
 
-- Add a second controller
+- Add a second controller [Done!]
 - Automatic identification of the controller (s)
 - Better control of the device: initializing and closing controllers, etc
 - More generic code: using structs for the status, analog axis, etc
