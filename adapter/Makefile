@@ -18,8 +18,8 @@ $(PGR).hex: $(PGR).elf
 $(PGR)_eeprom.hex: $(PGR).elf
 	avr-objcopy -j .eeprom --change-section-lma .eeprom=0 -O ihex $(PGR).elf $(PGR)_eeprom.hex
 
-#$(PGR).lst: $(PGR).elf
-#	avr-objdump -h -S $(PGR).elf > $(PGR).lst
+$(PGR).lst: $(PGR).elf
+	avr-objdump -h -S $(PGR).elf > $(PGR).lst
 
 $(PGR).elf $(PGR).map: $(PGR).o $(MODULES)
 	avr-gcc -g -mmcu=$(MCU_TARGET) -Wl,-Map,$(PGR).map -o $(PGR).elf $(PGR).o $(MODULES)
@@ -55,7 +55,7 @@ poff:
 	pk2cmd -P PIC16F630
 
 clean: 
-	rm *.elf *.hex *.map *.o #.lst
+	find . -maxdepth 1 -regextype awk -regex ".*\.(lst|hex|o|map|elf)" -delete
 
 tar: $(wildcard *.c) $(wildcard *.h) Makefile
 	tar --create --file $(PGR).tar.gz --gzip $^
