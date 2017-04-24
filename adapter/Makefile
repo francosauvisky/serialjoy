@@ -54,7 +54,7 @@ pon:
 poff:
 	pk2cmd -P PIC16F630
 
-clean: 
+clean:
 	find . -maxdepth 1 -regextype awk -regex ".*\.(lst|hex|o|map|elf)" -delete
 
 tar: $(wildcard *.c) $(wildcard *.h) Makefile

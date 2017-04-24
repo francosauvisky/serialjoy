@@ -124,7 +124,7 @@ genesis_setup(void)
 
 		data_sel = genesis_get_data(0);
 		data_tri = genesis_get_data(1);
-		
+
 		genesis_pulse_sel(1);
 	} while ( ( (data_sel & 0x0F) != 0x0F) && (count++ < 50) );
 
