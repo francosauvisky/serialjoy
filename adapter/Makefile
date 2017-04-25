@@ -6,7 +6,7 @@ hfuse = D9
 
 OPTIMIZE = Os
 
-MODULES = genesis.o genesis2.o uart_helper.o
+MODULES = genesis.o uart_helper.o
 
 all: $(PGR).hex $(PGR)_eeprom.hex $(PGR).map
 
