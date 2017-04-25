@@ -170,7 +170,6 @@ genesis_setup(struct genesis_controller *con)
 	// 	uart_print("\r\ndata: ");
 	// 	uart_print_bin(testdata[i]);
 	// }
-
 	do
 	{
 		genesis_pulse_sel(*con, 2);
@@ -181,13 +180,19 @@ genesis_setup(struct genesis_controller *con)
 		genesis_pulse_sel(*con, 1);
 	} while ( ( (data_sel & 0x0F) != 0x00) && (count++ < 50) );
 
+	(*con).conf = 0x00;
+
 	if(count >= 50)
 	{
-		(*con).conf = 0;
+		(*con).conf &= ~0x01;
 		return;
 	}
+	else
+	{
+		(*con).conf |= 0x01;
+	}
 
-	(*con).dev_num = dev_count;
+	(*con).conf |= dev_count << 4;
 
 	char dev_init_str[] = "!\0";
 	dev_init_str[1] = '0' + dev_count++;
@@ -195,16 +200,15 @@ genesis_setup(struct genesis_controller *con)
 
 	if((data_tri & 0x0F) == 0x0F)
 	{
-		(*con).conf = 3;
+		(*con).conf |= 0x02;
 	}
 	else
 	{
-		(*con).conf = 2;
+		(*con).conf &= ~0x02;
 	}
 
 	_delay_ms(50);
 
-	genesis_read_state(con);
 	genesis_read_state(con);
 
 	(*con).old_state = (*con).state;
@@ -242,14 +246,14 @@ genesis_update_state(struct genesis_controller *con)
 				if(((*con).state & _BV(i)) != 0)
 				{
 					loop_until_bit_is_set(UCSRA, UDRE);
-					UDR = '0' + (unsigned char) (*con).dev_num;
+					UDR = '0' + ((*con).conf >> 4);
 					loop_until_bit_is_set(UCSRA, UDRE);
 					UDR = 'a' + (unsigned char) i;
 				}
 				else
 				{
 					loop_until_bit_is_set(UCSRA, UDRE);
-					UDR = '0' + (unsigned char) (*con).dev_num;
+					UDR = '0' + ((*con).conf >> 4);
 					loop_until_bit_is_set(UCSRA, UDRE);
 					UDR = 'A' + (unsigned char) i;
 				}

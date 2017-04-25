@@ -10,7 +10,6 @@ with this source code in the file LICENSE.md
 struct genesis_controller
 {
 	uint8_t conf;
-	uint8_t dev_num;
 	uint16_t state;
 	uint16_t old_state;
 
