@@ -46,12 +46,42 @@ uint16_t state = 0b0000[S][M][X][Y][Z][C][B][A][R][L][D][U]
 
 #define cdelay() _delay_us(20)
 
-static uint8_t dev_count;
+static uint8_t dev_count = 0;
 
 void
 genesis_reset()
 {
 	dev_count = 0;
+}
+
+void
+genesis_set_pinmap(struct genesis_controller *con,
+	               volatile uint8_t *input_ddr,
+	               volatile uint8_t *input_pin,
+	               volatile uint8_t *input_port,
+	               uint8_t input_pin_d0,
+	               uint8_t input_pin_d1,
+	               uint8_t input_pin_d2,
+	               uint8_t input_pin_d3,
+	               uint8_t input_pin_d4,
+	               uint8_t input_pin_d5,
+	               volatile uint8_t *sel_ddr,
+	               volatile uint8_t *sel_port,
+	               uint8_t pin_sel)
+{
+	(*con).input_ddr = input_ddr,
+	(*con).input_pin = input_pin,
+	(*con).input_port = input_port,
+	(*con).pins_d[0] = input_pin_d0;
+	(*con).pins_d[1] = input_pin_d1;
+	(*con).pins_d[2] = input_pin_d2;
+	(*con).pins_d[3] = input_pin_d3;
+	(*con).pins_d[4] = input_pin_d4;
+	(*con).pins_d[5] = input_pin_d5;
+
+	(*con).sel_ddr = sel_ddr;
+	(*con).sel_port = sel_port;
+	(*con).pin_sel = pin_sel;
 }
 
 void

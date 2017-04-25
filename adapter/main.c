@@ -20,37 +20,10 @@ main (void)
 {
 	struct genesis_controller con1, con2;
 
-	// ------------- Defining pins:
-
-	con1.input_ddr = &DDRC;
-	con1.input_pin = &PINC;
-	con1.input_port = &PORTC;
-	con1.pins_d[0] = PC0;
-	con1.pins_d[1] = PC1;
-	con1.pins_d[2] = PC2;
-	con1.pins_d[3] = PC3;
-	con1.pins_d[4] = PC4;
-	con1.pins_d[5] = PC5;
-
-	con1.sel_ddr = &DDRB;
-	con1.sel_port = &PORTB;
-	con1.pin_sel = PB6;
-
-	con2.input_ddr = &DDRD;
-	con2.input_pin = &PIND;
-	con2.input_port = &PORTD;
-	con2.pins_d[0] = PD2;
-	con2.pins_d[1] = PD3;
-	con2.pins_d[2] = PD4;
-	con2.pins_d[3] = PD5;
-	con2.pins_d[4] = PD6;
-	con2.pins_d[5] = PD7;
-	
-	con2.sel_ddr = &DDRB;
-	con2.sel_port = &PORTB;
-	con2.pin_sel = PB7;
-
-	// ------------- Done
+	genesis_set_pinmap(&con1, &DDRC, &PINC, &PORTC,
+		PC0, PC1, PC2, PC3, PC4, PC5, &DDRB, &PORTB, PB6);
+ 	genesis_set_pinmap(&con2, &DDRD, &PIND, &PORTD,
+ 		PD2, PD3, PD4, PD5, PD6, PD7, &DDRB, &PORTB, PB7);
 
 	setup_uart();
 
