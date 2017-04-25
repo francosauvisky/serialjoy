@@ -9,8 +9,8 @@ with this source code in the file LICENSE.md
 
 #include <avr/io.h>
 
-#include "genesis.h"
-#include "uart_helper.h"
+#include "modules/genesis.h"
+#include "modules/uart_helper.h"
 
 #define F_CPU 8000000UL
 #include <util/delay.h>
@@ -61,11 +61,11 @@ main (void)
 	{
 		genesis_read_state(&con1);
 		genesis_read_state(&con2);
-		
+
 		genesis_update_state(&con1);
 		genesis_update_state(&con2);
 
-		_delay_ms(2);
+		_delay_ms(1);
 
 		unsigned char recv = read_nb_char();
 		if(recv != 0)

@@ -44,9 +44,9 @@ uint16_t state = 0b0000[S][M][X][Y][Z][C][B][A][R][L][D][U]
 #include "genesis.h"
 #include "uart_helper.h"
 
-static uint8_t dev_count;
-
 #define cdelay() _delay_us(20)
+
+static uint8_t dev_count;
 
 void
 genesis_reset()
