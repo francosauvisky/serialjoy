@@ -12,6 +12,7 @@ with this source code in the file LICENSE.md
 #include <string.h> /* String function definitions */
 #include <unistd.h> /* UNIX standard function definitions */
 #include <linux/input.h>
+#include <getopt.h>
 
 #include "defs.h"
 
@@ -21,7 +22,7 @@ exit(EXIT_FAILURE); \
 } while(0)
 
 #define MAX_DEV 10
-// #define LEGACY
+#define DEBUG
 
 struct uinput_controller
 {
@@ -102,19 +103,6 @@ main(int argc, char *argv[])
 				write(gamepad[device_n].fd, &ev, sizeof(struct input_event));
 				write(gamepad[device_n].fd, &sync, sizeof(struct input_event));
 			}
-
-			#ifdef LEGACY
-			else if(gamepad[device_n].status == 0 && get_event(&ev, dpkg.a_data) == 0)
-			{
-				char dev_name[20];
-				sprintf(dev_name, "serialjoy%d", device_n);
-				setup_uinput(gamepad[device_n].fd, dev_name);
-				gamepad[device_n].status = 1;
-
-				write(gamepad[device_n].fd, &ev, sizeof(struct input_event));
-				write(gamepad[device_n].fd, &sync, sizeof(struct input_event));
-			}
-			#endif
 		}
 		else if(dpkg.type == 4 && dpkg.device >= '0'
 			&& dpkg.device <= '9' && dpkg.a_data != 0) // Send data to device dpkg.device
@@ -125,6 +113,11 @@ main(int argc, char *argv[])
 			{
 				write(gamepad[device_n].fd, &ev, sizeof(struct input_event));
 				write(gamepad[device_n].fd, &sync, sizeof(struct input_event));
+
+				#ifdef DEBUG
+				printf("dev %c btn %c val %d\n", dpkg.device,dpkg.a_data < 'a'?
+					dpkg.a_data : (dpkg.a_data - 'a'+'A'), dpkg.a_data >= 'a');
+				#endif
 			}
 		}
 		else if(dpkg.type == 5 && dpkg.device >= '0'
@@ -205,4 +198,29 @@ If adapter doesn't responds to "?", then go to legacy mode
 - Second and third chars:
 
 [0x40..0x5F][0x40..0x5F]: Action data (first 5 bits of each char) = 10 bits
+*/
+
+/*
+Options sketch:
+
+-? or --help or -h: Prints help (to be written)
+
+-a or --auto: Tries to connect to some /dev/ttyUSBx
+
+-p (tty) or --port (tty): Connect to the device (tty)
+For example: --port /dev/ttyUSB0
+
+-b (baud) or --baud (baud): Sets the baud rate for the serial connection
+Check the possible values!
+
+-l or --legacy: Go to legacy mode (init device 0 automatically)
+
+-v or --verbose: Prints every information received from the adapter
+
+-s or --silent: Don't print anything besides errors
+
+-i or --ignore-check: Don't check the connection from the adapter
+
+If options -p and -a are run together, then first try to connect to tty,
+if fail, go to auto.
 */

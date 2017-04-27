@@ -78,7 +78,5 @@ get_event(struct input_event *ev, unsigned char action_byte)
 			return -1;
 	}
 
-	printf("%c %d\n", action_byte, (*ev).value);
-
 	return 0;
 }
