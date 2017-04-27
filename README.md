@@ -16,9 +16,9 @@ The *device* is the software that your computer will be running when the *adapte
 
 ## Contributing
 
-Feel free to contribute in any ways you can. The project is still young, so new ideas are welcome (constructive criticism is also welcome). Writing documentation is a must, as I haven't got the time to do that yet. If you want to become an active developer or have some other question, please contact me at my email: [francosauvisky+serialjoy@gmail.com](mailto:francosauvisky+serialjoy@gmail.com).
+Feel free to contribute in any way you can. The project is still young, so new ideas are welcome (constructive criticism is also welcome). Writing documentation is a must, as I haven't got the time to do that yet. If you want to become an active developer or have some other question, please contact me at my email: [francosauvisky+serialjoy@gmail.com](mailto:francosauvisky+serialjoy@gmail.com).
 
-Another way to contribute to this project is to donate/lend gamepads so I can adapt them. If you live nearby (Florianópolis, Santa Catarina, Brazil), I can return them afterwards to you. Otherwise, if you can write some code in C, then be welcome to adapt them yourself.
+Another way to contribute to this project is to donate/lend gamepads so I can program the adapter for them. If you live nearby (Florianópolis, Santa Catarina, Brazil), I can return them afterwards to you. Otherwise, if you can write some code, be welcome to adapt them by yourself (and don't forget to share the code afterwards!).
 
 ## To do
 
