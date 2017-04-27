@@ -256,7 +256,7 @@ genesis_read_state(struct genesis_controller *con)
 		return;
 	}
 
-	if((*con).conf == 3) // The order is important!
+	if((*con).conf & 0x02 != 0) // The order is important!
 		data3 = genesis_get_data(*con, 2);
 	data2 = genesis_get_data(*con, 1);
 	data1 = genesis_get_data(*con, 0);

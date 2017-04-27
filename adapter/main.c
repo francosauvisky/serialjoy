@@ -33,12 +33,13 @@ main (void)
 	while(1)
 	{
 		genesis_read_state(&con1);
+		_delay_ms(1);
 		genesis_read_state(&con2);
+		_delay_ms(1);
 
 		genesis_update_state(&con1);
 		genesis_update_state(&con2);
 
-		_delay_ms(1);
 
 		unsigned char recv = read_nb_char();
 		if(recv != 0)
