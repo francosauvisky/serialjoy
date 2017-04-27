@@ -9,9 +9,8 @@ with this source code in the file LICENSE.md
 
 #include <avr/io.h>
 
-#include "genesis.h"
-#include "genesis2.h"
-#include "uart_helper.h"
+#include "modules/genesis.h"
+#include "modules/uart_helper.h"
 
 #define F_CPU 8000000UL
 #include <util/delay.h>
@@ -19,28 +18,28 @@ with this source code in the file LICENSE.md
 void
 main (void)
 {
-	uint16_t state, ostate, state2, ostate2;
+	struct genesis_controller con1, con2;
+
+	genesis_set_pinmap(&con1, &DDRC, &PINC, &PORTC,
+		PC0, PC1, PC2, PC3, PC4, PC5, &DDRB, &PORTB, PB6);
+ 	genesis_set_pinmap(&con2, &DDRD, &PIND, &PORTD,
+ 		PD2, PD3, PD4, PD5, PD6, PD7, &DDRB, &PORTB, PB7);
 
 	setup_uart();
 
-	genesis_setup();
-	genesis2_setup();
-
-	ostate = genesis_get_state();
-	ostate2 = genesis2_get_state();
+	genesis_setup(&con1);
+	genesis_setup(&con2);
 
 	while(1)
 	{
-		state = genesis_get_state();
-		state2 = genesis2_get_state();
+		genesis_read_state(&con1);
+		_delay_ms(1);
+		genesis_read_state(&con2);
+		_delay_ms(1);
 
-		state_comp(state, ostate, 0);
-		state_comp(state2, ostate2, 1);
+		genesis_update_state(&con1);
+		genesis_update_state(&con2);
 
-		ostate = state;
-		ostate2 = state2;
-
-		_delay_ms(2);
 
 		unsigned char recv = read_nb_char();
 		if(recv != 0)
@@ -52,8 +51,9 @@ main (void)
 			}
 			else if(recv == 'd')
 			{
-				genesis_setup();
-				genesis2_setup();
+				genesis_reset();
+				genesis_setup(&con1);
+				genesis_setup(&con2);
 			}
 		}
 	}

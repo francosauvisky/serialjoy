@@ -6,7 +6,7 @@ hfuse = D9
 
 OPTIMIZE = Os
 
-MODULES = genesis.o genesis2.o uart_helper.o
+MODULES = genesis.o uart_helper.o
 
 all: $(PGR).hex $(PGR)_eeprom.hex $(PGR).map
 
@@ -27,7 +27,7 @@ $(PGR).elf $(PGR).map: $(PGR).o $(MODULES)
 $(PGR).o: $(PGR).c
 	avr-gcc -g -$(OPTIMIZE) -mmcu=$(MCU_TARGET) -c $(PGR).c
 
-$(MODULES): %.o: %.c
+$(MODULES): %.o: ./modules/%.c
 	avr-gcc -g -$(OPTIMIZE) -mmcu=$(MCU_TARGET) -c $<
 
 .PHONY: prog_lfuse prog_hfuse pon poff clean tar
