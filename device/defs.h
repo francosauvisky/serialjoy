@@ -25,11 +25,12 @@ struct data_packet
 	unsigned char h_data;
 };
 
-int open_port(char *);
-int check_conn();
+int open_port(char *, int);
+int check_conn(int, int);
 unsigned char read_char(int);
 void print_char(int fd, unsigned char);
 void read_packet(struct data_packet *, int);
+int get_baud(char *);
 
 //simple_uinput:
 

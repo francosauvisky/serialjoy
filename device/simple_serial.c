@@ -147,13 +147,16 @@ read_packet(struct data_packet *data, int fd)
 }
 
 int
-check_conn(int fd)
+check_conn(int fd, int flag)
 {
+	if(flag == 1)
+		return 0;
+
 	for(int i = 0; i < 30; i++)
 	{
 		print_char(fd, '?');
 
-		rcv = read_char(fd);
+		unsigned char rcv = read_char(fd);
 
 		if(rcv == '#')
 			return 0;
@@ -167,7 +170,7 @@ check_conn(int fd)
 int
 get_baud(char *string)
 {
-	else if(strcmp(string, "50"))
+	if(strcmp(string, "50"))
 		return B50;
 	else if(strcmp(string, "75"))
 		return B75;
@@ -199,8 +202,6 @@ get_baud(char *string)
 		return B38400;
 	else if(strcmp(string, "57600"))
 		return B57600;
-	else if(strcmp(string, "76800"))
-		return B76800;
 	else if(strcmp(string, "115200"))
 		return B115200;
 	else if(strcmp(string, "default"))

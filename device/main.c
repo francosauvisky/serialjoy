@@ -21,6 +21,9 @@ perror(str); \
 exit(EXIT_FAILURE); \
 } while(0)
 
+#define vprint(vlevel, format, args...)\
+if(verbose_flag >= vlevel) fprintf(stdout, format, args)
+
 #define MAX_DEV 10
 
 struct uinput_controller
@@ -29,11 +32,13 @@ struct uinput_controller
 	int fd;
 };
 
+static int verbose_flag = 1, ignore_check_flag = 0, legacy_flag = 0, auto_flag = 0,
+dry_run_flag = 0;
+
 int
 main(int argc, char *argv[])
 {
-	int serial_fd, runflag, nullcount = 0, check_flag = 0, verbose_flag = 1,
-	baud_rate, ignore_check_flag = 0, legacy_flag = 0, auto_flag = 0, dry_run = 0;
+	int serial_fd, runflag, nullcount = 0, check_flag = 0, baud_rate,  = 0;
 	char *serial_tty = NULL;
 	struct input_event ev, sync;
 	struct uinput_controller gamepad[MAX_DEV];
@@ -49,8 +54,8 @@ main(int argc, char *argv[])
 		{
 			{"verbose", no_argument, &verbose_flag, 2},
 			{"silent", no_argument, &verbose_flag, 0},
+			{"dry-run", no_argument, &dry_run_flag, 1},
 			{"baud", required_argument, 0, 'b'},
-			{"dry-run", no_argument, &dry_run, 1},
 			{"help", no_argument, 0, 'h'},
 			{"ignore-check", no_argument, 0, 'i'},
 			{"legacy", no_argument, 0, 'l'},
@@ -61,8 +66,7 @@ main(int argc, char *argv[])
 		// getopt_long stores the option index here.
 		int option_index = 0;
 
-		c = getopt_long (argc, argv, "b:hilp:",
-			long_options, &option_index);
+		c = getopt_long(argc, argv, "b:hilp:", long_options, &option_index);
 
 		// Detect the end of the options.
 		if (c == -1)
@@ -122,6 +126,8 @@ main(int argc, char *argv[])
 
 	// ----- Serial Port Initialization
 
+	vprint(2, "Trying to open %s...\n", serial_tty);
+
 	if(access(serial_tty, F_OK) == -1) // Checks for file access
 	{
 		printf(stderr, "Couldn't open port %s.\n", serial_tty);
@@ -130,15 +136,26 @@ main(int argc, char *argv[])
 
 	serial_fd = open_port(serial_tty, baud_rate); // Opens the serial port
 
-	if(dry_run)
-	{
-		if(check_conn(serial_fd) == 0)
-			return 0;
-		else
-			return 1;
-	}
+	vprint(2, "Serial port opened successfully\n", serial_tty);
 
 	// ----- Done
+
+	if(dry_run_flag) // If --dry-run, then just checks and leaves
+	{
+		vprint(2, "DRY-RUN: Checking for connection with adapter...\n");
+		if(check_conn(serial_fd, ignore_check_flag) == 0)
+		{
+			vprint(1, "Conection was successful\n");
+			exit(EXIT_SUCCESS);
+		}
+		else
+		{
+			vprint(1, "Failed to connect\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	vprint(2, "Initializing gamepads...\n");
 
 	for(int i = 0; i < MAX_DEV; i++) // Initializes the gamepad struct array
 	{
@@ -151,15 +168,22 @@ main(int argc, char *argv[])
 	sync.code = 0;
 	sync.value = 0;
 
-	if(check_conn(serial_fd) == 0) // Checks for connection with the adapter
+	vprint(2, "Checking for connection with adapter...\n");
+
+	if(check_conn(serial_fd, ignore_check_flag) == 0)
 	{
+		vprint(2, "Adapter detected\n");
 		usleep(250000);
 		print_char(serial_fd, 'd');
 	}
 	else
 	{
-		fprintf(stderr, "warning: check_conn/main\n");
+		vprint(2, "Couldn't detect adapter\n");
+		fprintf(stderr, "error: check_conn/main\n");
+		exit(EXIT_FAILURE);
 	}
+
+	vprint(2, "Running main loop...");
 
 	runflag = 1;
 	while(runflag == 1)
@@ -177,6 +201,7 @@ main(int argc, char *argv[])
 				sprintf(dev_name, "serialjoy%01d", device_n);
 				setup_uinput(gamepad[device_n].fd, dev_name);
 				gamepad[device_n].status = 1;
+				vprint(1, "Created device %s", dev_name);
 			}
 		}
 		else if(dpkg.type == 2 && dpkg.device >= '0' && dpkg.device <= '9') // Device destroy
@@ -187,6 +212,7 @@ main(int argc, char *argv[])
 			{
 				destroy_uinput(gamepad[device_n].fd);
 				gamepad[device_n].status = 0;
+				vprint(1, "Destroyed device %s", dev_name);
 			}
 		}
 		else if(dpkg.type == 3 && dpkg.a_data != 0) // Send data to device 0
@@ -197,6 +223,12 @@ main(int argc, char *argv[])
 			{
 				write(gamepad[device_n].fd, &ev, sizeof(struct input_event));
 				write(gamepad[device_n].fd, &sync, sizeof(struct input_event));
+				vprint(2, "data: type 3 dev %c btn %c val %d\n", dpkg.device, dpkg.a_data < 'a'?
+					dpkg.a_data : (dpkg.a_data - 'a'+'A'), dpkg.a_data >= 'a');
+			}
+			else
+			{
+				vprint(2, "Invalid type 3 packet received");
 			}
 		}
 		else if(dpkg.type == 4 && dpkg.device >= '0'
@@ -209,17 +241,19 @@ main(int argc, char *argv[])
 				write(gamepad[device_n].fd, &ev, sizeof(struct input_event));
 				write(gamepad[device_n].fd, &sync, sizeof(struct input_event));
 
-				#ifdef DEBUG
-				printf("dev %c btn %c val %d\n", dpkg.device,dpkg.a_data < 'a'?
+				vprint(2, "data: type 4 dev %c btn %c val %d\n", dpkg.device, dpkg.a_data < 'a'?
 					dpkg.a_data : (dpkg.a_data - 'a'+'A'), dpkg.a_data >= 'a');
-				#endif
+			}
+			else
+			{
+				vprint(2, "Invalid type 4 packet received");
 			}
 		}
 		else if(dpkg.type == 5 && dpkg.device >= '0'
 			&& dpkg.device <= '9' && dpkg.a_data != 0
 			&& dpkg.l_data != 0 && dpkg.h_data != 0) // Send complex data to device dpkg.device
 		{
-			// Still unimplemented
+			vprint(2, "Type 5 packet received [UNIMPLEMENTED]\n");
 		}
 		else // Not received any valid data
 		{
@@ -227,7 +261,7 @@ main(int argc, char *argv[])
 
 			if(nullcount > 10)
 			{
-				if(check_conn(serial_fd) != 0)
+				if(check_conn(serial_fd, ignore_check_flag) != 0)
 				{
 					fprintf(stderr, "error: check_conn/main\n");
 					exit(EXIT_FAILURE);
