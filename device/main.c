@@ -21,8 +21,8 @@ perror(str); \
 exit(EXIT_FAILURE); \
 } while(0)
 
-#define vprint(vlevel, format, args...)\
-if(verbose_flag >= vlevel) fprintf(stdout, format, args)
+#define vprint(vlevel, format, ...)\
+if(verbose_flag >= vlevel) fprintf(stdout, format, ##__VA_ARGS__); fflush(stdout);
 
 #define MAX_DEV 10
 
@@ -32,13 +32,26 @@ struct uinput_controller
 	int fd;
 };
 
-static int verbose_flag = 1, ignore_check_flag = 0, legacy_flag = 0, auto_flag = 0,
-dry_run_flag = 0;
+void print_help()
+{
+
+}
+void print_usage()
+{
+
+}
+
+static int verbose_flag = 1,
+           ignore_check_flag = 0,
+           legacy_flag = 0,
+           auto_flag = 0,
+           dry_run_flag = 0;
 
 int
 main(int argc, char *argv[])
 {
-	int serial_fd, runflag, nullcount = 0, check_flag = 0, baud_rate,  = 0;
+	int serial_fd, runflag, nullcount = 0, check_flag = 0;
+	speed_t baud_rate = 0;
 	char *serial_tty = NULL;
 	struct input_event ev, sync;
 	struct uinput_controller gamepad[MAX_DEV];
@@ -66,12 +79,12 @@ main(int argc, char *argv[])
 		// getopt_long stores the option index here.
 		int option_index = 0;
 
-		c = getopt_long(argc, argv, "b:hilp:", long_options, &option_index);
+		int c = getopt_long(argc, argv, "b:hilp:", long_options, &option_index);
 
 		// Detect the end of the options.
 		if (c == -1)
 		{
-			if((optint < argc) && !serial_tty) // If serial port is not defined
+			if((optind < argc) && !serial_tty) // If serial port is not defined
 				// and there is an non-parsed option
 			{
 				serial_tty = malloc(strlen(argv[argc - 1]) + 1);
@@ -87,7 +100,7 @@ main(int argc, char *argv[])
 				break;
 
 			case 'b':
-				baud_rate = get_baud(optarg);
+				get_baud(optarg, &baud_rate);
 			break;
 
 			case 'h':
@@ -122,40 +135,44 @@ main(int argc, char *argv[])
 	if(!serial_tty) // If serial port is not defined
 		print_usage();
 
+	if(!baud_rate)
+		get_baud("default", &baud_rate);
+
 	// ----- Done!
 
 	// ----- Serial Port Initialization
 
-	vprint(2, "Trying to open %s...\n", serial_tty);
+	vprint(2, "Trying to open %s... ", serial_tty);
 
 	if(access(serial_tty, F_OK) == -1) // Checks for file access
 	{
-		printf(stderr, "Couldn't open port %s.\n", serial_tty);
+		vprint(2, "Fail\n");
+		fprintf(stderr, "Couldn't open port %s.\n", serial_tty);
 		die("error: access/main");
 	}
 
 	serial_fd = open_port(serial_tty, baud_rate); // Opens the serial port
 
-	vprint(2, "Serial port opened successfully\n", serial_tty);
+	vprint(2, "Done\n", serial_tty);
 
 	// ----- Done
 
 	if(dry_run_flag) // If --dry-run, then just checks and leaves
 	{
-		vprint(2, "DRY-RUN: Checking for connection with adapter...\n");
+		vprint(2, "[DRY-RUN] Checking for connection with adapter... ");
 		if(check_conn(serial_fd, ignore_check_flag) == 0)
 		{
-			vprint(1, "Conection was successful\n");
+			vprint(1, "Done\n");
 			exit(EXIT_SUCCESS);
 		}
 		else
 		{
-			vprint(1, "Failed to connect\n");
+			vprint(1, "Fail\n");
 			exit(EXIT_FAILURE);
 		}
 	}
 
-	vprint(2, "Initializing gamepads...\n");
+	vprint(2, "Trying to open uinput... ");
 
 	for(int i = 0; i < MAX_DEV; i++) // Initializes the gamepad struct array
 	{
@@ -168,22 +185,24 @@ main(int argc, char *argv[])
 	sync.code = 0;
 	sync.value = 0;
 
-	vprint(2, "Checking for connection with adapter...\n");
+	vprint(2, "Done\n");
+
+	vprint(2, "Checking connection with adapter... ");
 
 	if(check_conn(serial_fd, ignore_check_flag) == 0)
 	{
-		vprint(2, "Adapter detected\n");
+		vprint(2, "Done\n");
 		usleep(250000);
 		print_char(serial_fd, 'd');
 	}
 	else
 	{
-		vprint(2, "Couldn't detect adapter\n");
+		vprint(2, "Fail\n");
 		fprintf(stderr, "error: check_conn/main\n");
 		exit(EXIT_FAILURE);
 	}
 
-	vprint(2, "Running main loop...");
+	vprint(2, "Running main loop:\n");
 
 	runflag = 1;
 	while(runflag == 1)
@@ -201,18 +220,22 @@ main(int argc, char *argv[])
 				sprintf(dev_name, "serialjoy%01d", device_n);
 				setup_uinput(gamepad[device_n].fd, dev_name);
 				gamepad[device_n].status = 1;
-				vprint(1, "Created device %s", dev_name);
+				vprint(1, "Created device %s\n", dev_name);
 			}
 		}
 		else if(dpkg.type == 2 && dpkg.device >= '0' && dpkg.device <= '9') // Device destroy
 		{
 			int device_n = dpkg.device - '0';
+			char dev_name[20];
 
 			if(gamepad[device_n].status == 1)
 			{
+				sprintf(dev_name, "serialjoy%01d", device_n);
+
 				destroy_uinput(gamepad[device_n].fd);
 				gamepad[device_n].status = 0;
-				vprint(1, "Destroyed device %s", dev_name);
+
+				vprint(1, "Destroyed device %s\n", dev_name);
 			}
 		}
 		else if(dpkg.type == 3 && dpkg.a_data != 0) // Send data to device 0

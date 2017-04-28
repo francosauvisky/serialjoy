@@ -11,6 +11,7 @@ with this source code in the file LICENSE.md
 #define gamepad_events_header
 
 #include <linux/input.h>
+#include <termios.h> 
 
 //gamepad_events:
 int get_event(struct input_event *, unsigned char);
@@ -30,7 +31,7 @@ int check_conn(int, int);
 unsigned char read_char(int);
 void print_char(int fd, unsigned char);
 void read_packet(struct data_packet *, int);
-int get_baud(char *);
+void get_baud(char *, speed_t *);
 
 //simple_uinput:
 
