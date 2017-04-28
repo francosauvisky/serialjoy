@@ -7,7 +7,7 @@ This source file is subject to the 3-Clause BSD License that is bundled
 with this source code in the file LICENSE.md
 */
 
-#include <stdio.h>  /* Standard input/output definitions */
+#include <stdio.h> /* Standard input/output definitions */
 #include <stdlib.h>
 #include <string.h> /* String function definitions */
 #include <unistd.h> /* UNIX standard function definitions */
@@ -22,7 +22,6 @@ exit(EXIT_FAILURE); \
 } while(0)
 
 #define MAX_DEV 10
-#define DEBUG
 
 struct uinput_controller
 {
@@ -33,16 +32,111 @@ struct uinput_controller
 int
 main(int argc, char *argv[])
 {
-	int serial_fd, runflag, nullcount = 0, check_flag = 0;
+	int serial_fd, runflag, nullcount = 0, check_flag = 0, verbose_flag = 1,
+	baud_rate, ignore_check_flag = 0, legacy_flag = 0, auto_flag = 0, dry_run = 0;
+	char *serial_tty = NULL;
 	struct input_event ev, sync;
 	struct uinput_controller gamepad[MAX_DEV];
 
+	// ----- Options parsing
+
+	if(argc <= 1)
+		print_usage();
+
+	while(1)
+	{
+		static struct option long_options[] =
+		{
+			{"verbose", no_argument, &verbose_flag, 2},
+			{"silent", no_argument, &verbose_flag, 0},
+			{"baud", required_argument, 0, 'b'},
+			{"dry-run", no_argument, &dry_run, 1},
+			{"help", no_argument, 0, 'h'},
+			{"ignore-check", no_argument, 0, 'i'},
+			{"legacy", no_argument, 0, 'l'},
+			{"port", required_argument, 0, 'p'},
+			{0, 0, 0, 0}
+		};
+
+		// getopt_long stores the option index here.
+		int option_index = 0;
+
+		c = getopt_long (argc, argv, "b:hilp:",
+			long_options, &option_index);
+
+		// Detect the end of the options.
+		if (c == -1)
+		{
+			if((optint < argc) && !serial_tty) // If serial port is not defined
+				// and there is an non-parsed option
+			{
+				serial_tty = malloc(strlen(argv[argc - 1]) + 1);
+				serial_tty = argv[argc - 1]; // Last argument
+			}
+
+			break;
+		}
+
+		switch (c)
+		{
+			case 0:
+				break;
+
+			case 'b':
+				baud_rate = get_baud(optarg);
+			break;
+
+			case 'h':
+				print_help();
+			break;
+
+			case 'i':
+				ignore_check_flag = 1;
+			break;
+
+			case 'l':
+				legacy_flag = 1;
+			break;
+
+			case 'p':
+				if(!auto_flag)
+				{
+					serial_tty = malloc(strlen(optarg) + 1);
+					strcpy(serial_tty, optarg);
+				}
+			break;
+
+			case '?':
+				print_usage();
+			break;
+
+			default:
+				abort ();
+		}
+	}
+
+	if(!serial_tty) // If serial port is not defined
+		print_usage();
+
+	// ----- Done!
+
 	// ----- Serial Port Initialization
 
-	if(access(argv[argc - 1], F_OK) == -1) // Checks for file access
+	if(access(serial_tty, F_OK) == -1) // Checks for file access
+	{
+		printf(stderr, "Couldn't open port %s.\n", serial_tty);
 		die("error: access/main");
+	}
 
-	serial_fd = open_port(argv[argc - 1]); // Opens the serial port
+	serial_fd = open_port(serial_tty, baud_rate); // Opens the serial port
+
+	if(dry_run)
+	{
+		if(check_conn(serial_fd) == 0)
+			return 0;
+		else
+			return 1;
+	}
 
 	// ----- Done
 
@@ -57,9 +151,10 @@ main(int argc, char *argv[])
 	sync.code = 0;
 	sync.value = 0;
 
-	if(check_conn(serial_fd) == 0)
+	if(check_conn(serial_fd) == 0) // Checks for connection with the adapter
 	{
-		check_flag = 1;
+		usleep(250000);
+		print_char(serial_fd, 'd');
 	}
 	else
 	{
@@ -138,18 +233,11 @@ main(int argc, char *argv[])
 					exit(EXIT_FAILURE);
 				}
 				nullcount = 0;
-				check_flag = 1;
 			}
 		}
 
 		if(dpkg.type != 0)
 			nullcount = 0;
-
-		if(check_flag == 1)
-		{
-			print_char(serial_fd, 'd');
-			check_flag = 0;
-		}
 	}
 }
 
@@ -203,24 +291,22 @@ If adapter doesn't responds to "?", then go to legacy mode
 /*
 Options sketch:
 
--? or --help or -h: Prints help (to be written)
+-h or --help: Prints help (to be written)
 
--a or --auto: Tries to connect to some /dev/ttyUSBx
+--dry-run: Only checks if adapter is connected
 
 -p (tty) or --port (tty): Connect to the device (tty)
 For example: --port /dev/ttyUSB0
+This option is ignored if --auto is set
 
 -b (baud) or --baud (baud): Sets the baud rate for the serial connection
 Check the possible values!
 
 -l or --legacy: Go to legacy mode (init device 0 automatically)
 
--v or --verbose: Prints every information received from the adapter
-
--s or --silent: Don't print anything besides errors
-
 -i or --ignore-check: Don't check the connection from the adapter
 
-If options -p and -a are run together, then first try to connect to tty,
-if fail, go to auto.
+--verbose: Prints every information received from the adapter
+
+--silent: Don't print anything besides errors
 */
