@@ -13,8 +13,16 @@ with this source code in the file LICENSE.md
 #include <unistd.h> /* UNIX standard function definitions */
 #include <linux/input.h>
 #include <getopt.h>
+#include <signal.h>
 
 #include "defs.h"
+
+// ######### Parameters define:
+
+#define MAX_DEV 10
+#define MAX_NULL_CYCLE 10 // time to check = MAX_NULL_CYCLE * 0.5 seconds
+
+// ######### Some useful aliases:
 
 #define die(str, args...) do { \
 perror(str); \
@@ -24,13 +32,32 @@ exit(EXIT_FAILURE); \
 #define vprint(vlevel, format, ...)\
 if(verbose_flag >= vlevel) fprintf(stdout, format, ##__VA_ARGS__); fflush(stdout);
 
-#define MAX_DEV 10
+// ######### Signal handling:
 
-struct uinput_controller
+volatile int sigint_stop = 0;
+
+volatile int sigint_serial_fd = 0;
+
+void sigint_handler(int sig)
 {
-	int status;
-	int fd;
-};
+	if(sigint_serial_fd) // Stops any read cycle freezing the main loop
+	{
+		struct termios tty;
+
+		if (tcgetattr(sigint_serial_fd, &tty) < 0)
+			die("error: tcgetattr/sigint_handler");
+
+		tty.c_cc[VMIN] = 0;
+		tty.c_cc[VTIME] = 0;
+
+		if (tcsetattr(sigint_serial_fd, TCSANOW, &tty) != 0)
+			die("error: tcsetattr/sigint_handler");
+	}
+
+	sigint_stop = 1;
+}
+
+// ######### Printing functions
 
 void print_help()
 {
@@ -41,11 +68,21 @@ void print_usage()
 
 }
 
+// ######### Flags and structs:
+
 static int verbose_flag = 1,
            ignore_check_flag = 0,
            legacy_flag = 0,
            auto_flag = 0,
            dry_run_flag = 0;
+
+struct uinput_controller
+{
+	int status;
+	int fd;
+};
+
+// Main code:
 
 int
 main(int argc, char *argv[])
@@ -56,7 +93,11 @@ main(int argc, char *argv[])
 	struct input_event ev, sync;
 	struct uinput_controller gamepad[MAX_DEV];
 
-	// ----- Options parsing
+	// ################ Signal handling ################
+
+    signal(SIGINT, sigint_handler);
+
+	// ################ Options parsing ################
 
 	if(argc <= 1)
 		print_usage();
@@ -135,12 +176,10 @@ main(int argc, char *argv[])
 	if(!serial_tty) // If serial port is not defined
 		print_usage();
 
-	if(!baud_rate)
+	if(!baud_rate) // If baud rate is not defined
 		get_baud("default", &baud_rate);
 
-	// ----- Done!
-
-	// ----- Serial Port Initialization
+	// ################ Serial Port Initialization ################
 
 	vprint(2, "Trying to open %s... ", serial_tty);
 
@@ -153,9 +192,11 @@ main(int argc, char *argv[])
 
 	serial_fd = open_port(serial_tty, baud_rate); // Opens the serial port
 
+	sigint_serial_fd = serial_fd; // For terminating the program
+
 	vprint(2, "Done\n", serial_tty);
 
-	// ----- Done
+	// ################ Dry run ################
 
 	if(dry_run_flag) // If --dry-run, then just checks and leaves
 	{
@@ -172,6 +213,8 @@ main(int argc, char *argv[])
 		}
 	}
 
+	// ################ uinput initialization ################
+
 	vprint(2, "Trying to open uinput... ");
 
 	for(int i = 0; i < MAX_DEV; i++) // Initializes the gamepad struct array
@@ -187,6 +230,8 @@ main(int argc, char *argv[])
 
 	vprint(2, "Done\n");
 
+	// ################ Connection check ################
+
 	vprint(2, "Checking connection with adapter... ");
 
 	if(check_conn(serial_fd, ignore_check_flag) == 0)
@@ -201,6 +246,9 @@ main(int argc, char *argv[])
 		fprintf(stderr, "error: check_conn/main\n");
 		exit(EXIT_FAILURE);
 	}
+
+	// ################ Main loop ################
+	// (mostly: read from serial port, process data, send to uinput)
 
 	vprint(2, "Running main loop:\n");
 
@@ -241,9 +289,22 @@ main(int argc, char *argv[])
 		else if(dpkg.type == 3 && dpkg.a_data != 0) // Send data to device 0
 		{
 			int device_n = 0;
+			char dev_name[20];
 
-			if(gamepad[device_n].status == 1 && get_event(&ev, dpkg.a_data) == 0)
+			if((get_event(&ev, dpkg.a_data) == 0) && gamepad[device_n].status == 1)
 			{
+				write(gamepad[device_n].fd, &ev, sizeof(struct input_event));
+				write(gamepad[device_n].fd, &sync, sizeof(struct input_event));
+				vprint(2, "data: type 3 dev %c btn %c val %d\n", dpkg.device, dpkg.a_data < 'a'?
+					dpkg.a_data : (dpkg.a_data - 'a'+'A'), dpkg.a_data >= 'a');
+			}
+			else if(gamepad[device_n].status == 0 && legacy_flag == 1)
+			{
+				sprintf(dev_name, "serialjoy%01d", device_n);
+				setup_uinput(gamepad[device_n].fd, dev_name);
+				gamepad[device_n].status = 1;
+				vprint(1, "Created device %s (legacy mode)\n", dev_name);
+
 				write(gamepad[device_n].fd, &ev, sizeof(struct input_event));
 				write(gamepad[device_n].fd, &sync, sizeof(struct input_event));
 				vprint(2, "data: type 3 dev %c btn %c val %d\n", dpkg.device, dpkg.a_data < 'a'?
@@ -282,7 +343,7 @@ main(int argc, char *argv[])
 		{
 			nullcount++;
 
-			if(nullcount > 10)
+			if(nullcount > MAX_NULL_CYCLE)
 			{
 				if(check_conn(serial_fd, ignore_check_flag) != 0)
 				{
@@ -293,9 +354,40 @@ main(int argc, char *argv[])
 			}
 		}
 
-		if(dpkg.type != 0)
+		if(dpkg.type != 0) // Clears counter if data is received
 			nullcount = 0;
+
+		if(sigint_stop) // If sigint, then stop run
+			break;
 	}
+
+	// ################ Terminating devices ################
+
+	vprint(1, "\n");
+
+	for(int i = 0; i < MAX_DEV; i++) // Initializes the gamepad struct array
+	{
+		if(gamepad[i].status == 1)
+		{
+			char dev_name[20];
+			sprintf(dev_name, "serialjoy%01d", i);
+
+			vprint(1, "Destroying device %s... ", dev_name);
+
+			destroy_uinput(gamepad[i].fd);
+			gamepad[i].status = 0;
+
+			close(gamepad[i].fd);
+
+			vprint(1, "Done\n", dev_name);
+		}
+	}
+
+	vprint(2, "Closing serial port... ");
+	close(serial_fd);
+	vprint(2, "Done\n");
+
+	return 0;
 }
 
 /*
@@ -354,10 +446,10 @@ Options sketch:
 
 -p (tty) or --port (tty): Connect to the device (tty)
 For example: --port /dev/ttyUSB0
-This option is ignored if --auto is set
 
 -b (baud) or --baud (baud): Sets the baud rate for the serial connection
-Check the possible values!
+Possible values: 50, 75, 110, 134, 150, 200, 300, 600, 1200, 1800, 2400,
+4800, 9600, 19200, 38400, 57600, 115200
 
 -l or --legacy: Go to legacy mode (init device 0 automatically)
 

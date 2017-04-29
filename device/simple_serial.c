@@ -31,22 +31,20 @@ int set_serial_props(int fd, int speed)
 {
 	struct termios tty;
 
-	if (tcgetattr(fd, &tty) < 0) {
-		printf("Error from tcgetattr: %s\n", strerror(errno));
-		return -1;
-	}
+	if (tcgetattr(fd, &tty) < 0)
+		die("error: tcgetattr/set_serial_props");
 
 	cfsetospeed(&tty, (speed_t)speed);
 	cfsetispeed(&tty, (speed_t)speed);
 
-  tty.c_cflag |= (CLOCAL | CREAD);  /* ignore modem controls */
+	tty.c_cflag |= (CLOCAL | CREAD); /* ignore modem controls */
 	tty.c_cflag &= ~CSIZE;
-  tty.c_cflag |= CS8;     /* 8-bit characters */
-  tty.c_cflag &= ~PARENB;   /* no parity bit */
-  tty.c_cflag &= ~CSTOPB;   /* only need 1 stop bit */
-  tty.c_cflag &= ~CRTSCTS;  /* no hardware flowcontrol */
+	tty.c_cflag |= CS8; /* 8-bit characters */
+	tty.c_cflag &= ~PARENB; /* no parity bit */
+	tty.c_cflag &= ~CSTOPB; /* only need 1 stop bit */
+	tty.c_cflag &= ~CRTSCTS; /* no hardware flowcontrol */
 
-  /* setup for non-canonical mode */
+	/* setup for non-canonical mode */
 	tty.c_iflag &= ~(IGNBRK
 		| BRKINT
 		| PARMRK
@@ -58,7 +56,7 @@ int set_serial_props(int fd, int speed)
 	tty.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
 	tty.c_oflag &= ~OPOST;
 
-  /* fetch bytes as they become available */
+	/* fetch bytes as they become available */
 	tty.c_cc[VMIN] = 0;
 	tty.c_cc[VTIME] = 5;
 
