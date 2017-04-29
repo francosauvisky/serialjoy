@@ -16,7 +16,6 @@ The character indicates the button
 a-A:
 Uppercase -> Button pressed
 Lowercase -> Button relased
-
 */
 
 #include <stdio.h>  /* Standard input/output definitions */
@@ -24,6 +23,23 @@ Lowercase -> Button relased
 #include <linux/input.h>
 
 #include "defs.h"
+
+const int transl_array[][2] =
+{
+	{(int) 'A', BTN_DPAD_UP},
+	{(int) 'B', BTN_DPAD_DOWN},
+	{(int) 'C', BTN_DPAD_LEFT},
+	{(int) 'D', BTN_DPAD_RIGHT},
+	{(int) 'E', BTN_A},
+	{(int) 'F', BTN_B},
+	{(int) 'G', BTN_C},
+	{(int) 'H', BTN_Z},
+	{(int) 'I', BTN_Y},
+	{(int) 'J', BTN_X},
+	{(int) 'K', BTN_MODE},
+	{(int) 'L', BTN_START},
+	{0,0},
+};
 
 int
 get_event(struct input_event *ev, unsigned char action_byte)
@@ -36,47 +52,20 @@ get_event(struct input_event *ev, unsigned char action_byte)
 	if(action_byte >= 'a')
 		action_byte -= 'a' - 'A';
 
-	switch(action_byte)
+	int done_flag = 0;
+
+	for(int i = 0; transl_array[i][0] != 0; i++)
 	{
-		case 'A':
-			(*ev).code = BTN_DPAD_UP;
+		if((int) action_byte == transl_array[i][0])
+		{
+			(*ev).code = transl_array[i][1];
+			done_flag = 1;
 			break;
-		case 'B':
-			(*ev).code = BTN_DPAD_DOWN;
-			break;
-		case 'C':
-			(*ev).code = BTN_DPAD_LEFT;
-			break;
-		case 'D':
-			(*ev).code = BTN_DPAD_RIGHT;
-			break;
-		case 'E':
-			(*ev).code = BTN_A;
-			break;
-		case 'F':
-			(*ev).code = BTN_B;
-			break;
-		case 'G':
-			(*ev).code = BTN_C;
-			break;
-		case 'H':
-			(*ev).code = BTN_Z;
-			break;
-		case 'I':
-			(*ev).code = BTN_Y;
-			break;
-		case 'J':
-			(*ev).code = BTN_X;
-			break;
-		case 'K':
-			(*ev).code = BTN_MODE;
-			break;
-		case 'L':
-			(*ev).code = BTN_START;
-			break;
-		default:
-			return -1;
+		}
 	}
 
-	return 0;
+	if(done_flag == 0)
+		return 1;
+	else
+		return 0;
 }
