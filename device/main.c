@@ -372,7 +372,7 @@ main(int argc, char *argv[])
 			{
 				write(gamepad[device_n].fd, &ev, sizeof(struct input_event));
 				write(gamepad[device_n].fd, &sync, sizeof(struct input_event));
-				vprint(2, "data: type 3 dev %c btn %c val %d\n", dpkg.device, dpkg.a_data < 'a'?
+				vprint(2, "data: type 3 dev %d btn %c val %d\n", device_n, dpkg.a_data < 'a'?
 					dpkg.a_data : (dpkg.a_data - 'a'+'A'), dpkg.a_data >= 'a');
 			}
 			else if(gamepad[device_n].status == 0 && legacy_flag == 1)
@@ -384,7 +384,7 @@ main(int argc, char *argv[])
 
 				write(gamepad[device_n].fd, &ev, sizeof(struct input_event));
 				write(gamepad[device_n].fd, &sync, sizeof(struct input_event));
-				vprint(2, "data: type 3 dev %c btn %c val %d\n", dpkg.device, dpkg.a_data < 'a'?
+				vprint(2, "data: type 3 dev %d btn %c val %d\n", device_n, dpkg.a_data < 'a'?
 					dpkg.a_data : (dpkg.a_data - 'a'+'A'), dpkg.a_data >= 'a');
 			}
 			else
