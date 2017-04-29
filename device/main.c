@@ -62,8 +62,7 @@ void sigint_handler(int sig)
 void print_help()
 {
 	fprintf(stdout,
-"\n Usage: ./serialjoy [\e[4moptions\e[0m] \e[4mserial_port\e[0m\n\
-       ./serialjoy [\e[4moptions\e[0m] [\e[1m--port\e[0m|\e[1m-p\e[0m] \e[4mserial_port\e[0m\n\
+"\n Usage: ./serialjoy [\e[4moptions\e[0m] [\e[1m--port\e[0m|\e[1m-p\e[0m] \e[4mserial_port\e[0m\n\
 \n\
     Serialjoy is a universal and hobbist-friendly adapter of joysticks/gamepads\n\
     on Linux using serial ports.\n\
@@ -113,7 +112,7 @@ void print_help()
 void print_usage()
 {
 	fprintf(stderr,
-"Usage: ./serialjoy [\e[4moptions\e[0m] \e[4mserial_port\e[0m\n\
+"Usage: ./serialjoy [\e[4moptions\e[0m] [\e[1m--port\e[0m|\e[1m-p\e[0m] \e[4mserial_port\e[0m\n\
        where \e[4mserial_port\e[0m is the path of the serial port device file\n\
 \n\
 Example: ./serialjoy --baud 38400 /dev/ttyUSB0\n\
