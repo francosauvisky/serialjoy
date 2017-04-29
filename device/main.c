@@ -95,8 +95,7 @@ void print_help()
       \e[1m--legacy\e[0m:  Initializes devices automatically\n\
 \n\
       \e[1m-i\e[0m\n\
-      \e[1m-ignore-check\e[0m: Don't checks for the adapter, only listen to the serial\n\
-                     port.\n\
+      \e[1m-ignore-check\e[0m: Don't wait for the adapter to respond.\n\
 \n\
  Example:\n\
       ./serialjoy --verbose --baud 38400 --port /dev/ttyUSB0\n\
@@ -115,10 +114,9 @@ void print_usage()
 {
 	fprintf(stderr,
 "Usage: ./serialjoy [\e[4moptions\e[0m] \e[4mserial_port\e[0m\n\
-       ./serialjoy [\e[4moptions\e[0m] [\e[1m--port\e[0m|\e[1m-p\e[0m] \e[4mserial_port\e[0m\n\
        where \e[4mserial_port\e[0m is the path of the serial port device file\n\
 \n\
-Example: ./serialjoy --baud 38400 --port /dev/ttyUSB0\n\
+Example: ./serialjoy --baud 38400 /dev/ttyUSB0\n\
 \n\
 See ./serialjoy --help for more information\n\
 "
@@ -130,10 +128,10 @@ See ./serialjoy --help for more information\n\
 // ######### Flags and structs:
 
 static int verbose_flag = 1,
-           ignore_check_flag = 0,
-           legacy_flag = 0,
-           auto_flag = 0,
-           dry_run_flag = 0;
+ignore_check_flag = 0,
+legacy_flag = 0,
+auto_flag = 0,
+dry_run_flag = 0;
 
 struct uinput_controller
 {
@@ -154,7 +152,7 @@ main(int argc, char *argv[])
 
 	// ################ Signal handling ################
 
-    signal(SIGINT, sigint_handler);
+	signal(SIGINT, sigint_handler);
 
 	// ################ Options parsing ################
 
@@ -197,38 +195,38 @@ main(int argc, char *argv[])
 		switch (c)
 		{
 			case 0:
-				break;
+			break;
 
 			case 'b':
-				get_baud(optarg, &baud_rate);
+			get_baud(optarg, &baud_rate);
 			break;
 
 			case 'h':
-				print_help();
+			print_help();
 			break;
 
 			case 'i':
-				ignore_check_flag = 1;
+			ignore_check_flag = 1;
 			break;
 
 			case 'l':
-				legacy_flag = 1;
+			legacy_flag = 1;
 			break;
 
 			case 'p':
-				if(!auto_flag)
-				{
-					serial_tty = malloc(strlen(optarg) + 1);
-					strcpy(serial_tty, optarg);
-				}
+			if(!auto_flag)
+			{
+				serial_tty = malloc(strlen(optarg) + 1);
+				strcpy(serial_tty, optarg);
+			}
 			break;
 
 			case '?':
-				print_usage();
+			print_usage();
 			break;
 
 			default:
-				abort ();
+			abort ();
 		}
 	}
 
@@ -260,7 +258,27 @@ main(int argc, char *argv[])
 	if(dry_run_flag) // If --dry-run, then just checks and leaves
 	{
 		vprint(2, "[DRY-RUN] Checking for connection with adapter... ");
-		if(check_conn(serial_fd, ignore_check_flag) == 0)
+
+		int check_success = 0;
+
+		for(int j = 0; j < 2; j++)
+		{
+			print_char(serial_fd, '?');
+
+			usleep(100000);
+			for(int i = 0; i < 3; i++)
+			{
+				unsigned char rcv = read_char(serial_fd);
+
+				if(rcv == '#')
+				{
+					check_success = 1;
+					break;
+				}
+			}
+		}
+
+		if(check_success == 1)
 		{
 			vprint(1, "Done\n");
 			exit(EXIT_SUCCESS);
