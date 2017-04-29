@@ -61,11 +61,70 @@ void sigint_handler(int sig)
 
 void print_help()
 {
+	fprintf(stdout,
+"\n Usage: ./serialjoy [\e[4moptions\e[0m] \e[4mserial_port\e[0m\n\
+       ./serialjoy [\e[4moptions\e[0m] [\e[1m--port\e[0m|\e[1m-p\e[0m] \e[4mserial_port\e[0m\n\
+\n\
+    Serialjoy is a universal and hobbist-friendly adapter of joysticks/gamepads\n\
+    on Linux using serial ports.\n\
+\n\
+ Options:\n\
+      \e[1m-p\e[0m \e[4mserial_port\e[0m\n\
+      \e[1m--port\e[0m \e[4mserial_port\e[0m: Use the device file \e[4mserial_port\e[0m for communicating\n\
+                          with the adapter. If not defined, uses the last\n\
+                          argument given.\n\
+\n\
+      \e[1m-b\e[0m \e[4mbaud_rate\e[0m\n\
+      \e[1m--baud\e[0m \e[4mbaud_rate\e[0m: Sets \e[4mbaud_rate\e[0m as the baud rate of the serial port\n\
+                        The availiable values for baud rate are:\n\
+                        50, 75, 110, 134, 150, 200, 300, 600, 1200, 1800,\n\
+                        2400, 4800, 9600, 19200, 38400, 57600, 115200\n\
+                        If no baud rate is specified, then use 38400.\n\
+\n\
+      \e[1m--verbose\e[0m: Shows all that is being done while running, including\n\
+                 all the data received from the adapter.\n\
+\n\
+      \e[1m--silent\e[0m: Prints only errors\n\
+\n\
+      \e[1m--dry-run\e[0m: Does not start the main loop, only opens the serial port\n\
+                 and checks for the device, returning 0 if sucess or 1 if\n\
+                 fails. Useful for detecting in which port the adapter is\n\
+                 connected.\n\
+\n\
+      \e[1m-l\e[0m\n\
+      \e[1m--legacy\e[0m:  Initializes devices automatically\n\
+\n\
+      \e[1m-i\e[0m\n\
+      \e[1m-ignore-check\e[0m: Don't checks for the adapter, only listen to the serial\n\
+                     port.\n\
+\n\
+ Example:\n\
+      ./serialjoy --verbose --baud 38400 --port /dev/ttyUSB0\n\
+        Connects to the adapter at /dev/ttyUSB0 with baud rate 38400.\n\
+\n\
+ See the documentation at https://github.com/francosauvisky/serialjoy for\n\
+ more information\n\
+\n\
+"
+);
 
+	exit(EXIT_SUCCESS);
 }
+
 void print_usage()
 {
+	fprintf(stderr,
+"Usage: ./serialjoy [\e[4moptions\e[0m] \e[4mserial_port\e[0m\n\
+       ./serialjoy [\e[4moptions\e[0m] [\e[1m--port\e[0m|\e[1m-p\e[0m] \e[4mserial_port\e[0m\n\
+       where \e[4mserial_port\e[0m is the path of the serial port device file\n\
+\n\
+Example: ./serialjoy --baud 38400 --port /dev/ttyUSB0\n\
+\n\
+See ./serialjoy --help for more information\n\
+"
+);
 
+	exit(EXIT_FAILURE);
 }
 
 // ######### Flags and structs:
@@ -319,6 +378,7 @@ main(int argc, char *argv[])
 			&& dpkg.device <= '9' && dpkg.a_data != 0) // Send data to device dpkg.device
 		{
 			int device_n = dpkg.device - '0';
+			char dev_name[20];
 
 			if(gamepad[device_n].status == 1 && get_event(&ev, dpkg.a_data) == 0)
 			{
@@ -326,6 +386,18 @@ main(int argc, char *argv[])
 				write(gamepad[device_n].fd, &sync, sizeof(struct input_event));
 
 				vprint(2, "data: type 4 dev %c btn %c val %d\n", dpkg.device, dpkg.a_data < 'a'?
+					dpkg.a_data : (dpkg.a_data - 'a'+'A'), dpkg.a_data >= 'a');
+			}
+			else if(gamepad[device_n].status == 0 && legacy_flag == 1)
+			{
+				sprintf(dev_name, "serialjoy%01d", device_n);
+				setup_uinput(gamepad[device_n].fd, dev_name);
+				gamepad[device_n].status = 1;
+				vprint(1, "Created device %s (legacy mode)\n", dev_name);
+
+				write(gamepad[device_n].fd, &ev, sizeof(struct input_event));
+				write(gamepad[device_n].fd, &sync, sizeof(struct input_event));
+				vprint(2, "data: type 3 dev %c btn %c val %d\n", dpkg.device, dpkg.a_data < 'a'?
 					dpkg.a_data : (dpkg.a_data - 'a'+'A'), dpkg.a_data >= 'a');
 			}
 			else
@@ -377,10 +449,10 @@ main(int argc, char *argv[])
 			destroy_uinput(gamepad[i].fd);
 			gamepad[i].status = 0;
 
-			close(gamepad[i].fd);
-
 			vprint(1, "Done\n", dev_name);
 		}
+
+		close(gamepad[i].fd);
 	}
 
 	vprint(2, "Closing serial port... ");
