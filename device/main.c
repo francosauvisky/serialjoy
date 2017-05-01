@@ -17,17 +17,7 @@ with this source code in the file LICENSE.md
 
 #include "defs.h"
 
-// ######### Parameters define:
-
-#define MAX_DEV 10
-#define MAX_NULL_CYCLE 10 // time to check = MAX_NULL_CYCLE * 0.5 seconds
-
 // ######### Some useful aliases:
-
-#define die(str, args...) do { \
-perror(str); \
-exit(EXIT_FAILURE); \
-} while(0)
 
 #define vprint(vlevel, format, ...)\
 if(verbose_flag >= vlevel) fprintf(stdout, format, ##__VA_ARGS__); fflush(stdout);
@@ -104,7 +94,7 @@ void print_help()
  more information\n\
 \n\
 "
-);
+	);
 
 	exit(EXIT_SUCCESS);
 }
@@ -119,7 +109,7 @@ Example: ./serialjoy --baud 38400 /dev/ttyUSB0\n\
 \n\
 See ./serialjoy --help for more information\n\
 "
-);
+	);
 
 	exit(EXIT_FAILURE);
 }
@@ -129,7 +119,6 @@ See ./serialjoy --help for more information\n\
 static int verbose_flag = 1,
 ignore_check_flag = 0,
 legacy_flag = 0,
-auto_flag = 0,
 dry_run_flag = 0;
 
 struct uinput_controller
@@ -213,11 +202,8 @@ main(int argc, char *argv[])
 			break;
 
 			case 'p':
-			if(!auto_flag)
-			{
-				serial_tty = malloc(strlen(optarg) + 1);
-				strcpy(serial_tty, optarg);
-			}
+			serial_tty = malloc(strlen(optarg) + 1);
+			strcpy(serial_tty, optarg);
 			break;
 
 			case '?':
@@ -434,11 +420,16 @@ main(int argc, char *argv[])
 
 			if(nullcount > MAX_NULL_CYCLE)
 			{
+				vprint(2, "Connection timeout, checking... ");
+
 				if(check_conn(serial_fd, ignore_check_flag) != 0)
 				{
-					fprintf(stderr, "error: check_conn/main\n");
-					exit(EXIT_FAILURE);
+					vprint(2, "Fail\n");
+					fprintf(stderr, "Connection failed, shutting down\n");
+					break;
 				}
+
+				vprint(2, "Done\n");
 				nullcount = 0;
 			}
 		}
@@ -447,12 +438,13 @@ main(int argc, char *argv[])
 			nullcount = 0;
 
 		if(sigint_stop) // If sigint, then stop run
+		{
+			vprint(1, "\n");
 			break;
+		}
 	}
 
 	// ################ Terminating devices ################
-
-	vprint(1, "\n");
 
 	for(int i = 0; i < MAX_DEV; i++) // Initializes the gamepad struct array
 	{

@@ -18,11 +18,6 @@ with this source code in the file LICENSE.md
 
 #include "defs.h"
 
-#define die(str, args...) do { \
-perror(str); \
-exit(EXIT_FAILURE); \
-} while(0)
-
 int
 open_uinput()
 {

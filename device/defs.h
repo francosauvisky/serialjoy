@@ -14,9 +14,11 @@ with this source code in the file LICENSE.md
 #include <termios.h> 
 
 //gamepad_events:
+
 int get_event(struct input_event *, unsigned char);
 
 //simple_serial:
+
 struct data_packet
 {
 	int type;
@@ -40,3 +42,19 @@ void setup_uinput(int, char *);
 void destroy_uinput(int);
 
 #endif
+
+// Useful aliases:
+
+#define die(str, args...) do { \
+perror(str); \
+exit(EXIT_FAILURE); \
+} while(0)
+
+// Parameters:
+
+#define MAX_DEV 10 // maximum number of devices
+
+#define MAX_NULL_CYCLE 20 // time to check = MAX_NULL_CYCLE * 0.5 seconds
+#define MAX_CHECK_AFTER_FAIL 20 // timeout = MAX_CHECK_AFTER_FAIL * 0.5 seconds
+
+#define DEFAULT_BAUD_RATE B38400

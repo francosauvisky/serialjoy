@@ -17,13 +17,6 @@ with this source code in the file LICENSE.md
 
 #include "defs.h"
 
-#define die(str, args...) do { \
-perror(str); \
-exit(EXIT_FAILURE); \
-} while(0)
-
-#define DEFAULT_BAUD_RATE B38400
-
 // This code is heavily based on the following guide:
 // http://www.cmrr.umn.edu/~strupp/serial.html
 
@@ -150,7 +143,7 @@ check_conn(int fd, int flag)
 	if(flag == 1)
 		return 0;
 
-	for(int i = 0; i < 30; i++)
+	for(int i = 0; i < MAX_CHECK_AFTER_FAIL; i++)
 	{
 		print_char(fd, '?');
 
@@ -159,7 +152,7 @@ check_conn(int fd, int flag)
 		if(rcv == '#')
 			return 0;
 		else
-			sleep(1);
+			usleep(1000);
 	}
 
 	return -1;
