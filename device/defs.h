@@ -13,10 +13,6 @@ with this source code in the file LICENSE.md
 #include <linux/input.h>
 #include <termios.h> 
 
-//gamepad_events:
-
-int get_event(struct input_event *, unsigned char);
-
 //simple_serial:
 
 struct data_packet
@@ -41,7 +37,10 @@ int open_uinput(void);
 void setup_uinput(int, char *);
 void destroy_uinput(int);
 
-#endif
+//gamepad_events:
+
+int get_key_event(struct input_event *, struct data_packet);
+int get_abs_event(struct input_event *, struct data_packet);
 
 // Useful aliases:
 
@@ -58,3 +57,5 @@ exit(EXIT_FAILURE); \
 #define MAX_CHECK_AFTER_FAIL 20 // timeout = MAX_CHECK_AFTER_FAIL * 0.5 seconds
 
 #define DEFAULT_BAUD_RATE B38400
+
+#endif

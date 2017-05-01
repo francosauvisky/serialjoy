@@ -46,18 +46,27 @@ setup_uinput(int ufd, char *dev_name)
 	for(char i = 'A'; i <= 'Z'; i++)
 	{
 		struct input_event foo;
-		get_event(&foo, i);
+		struct data_packet bar;
+		bar.a_data = i;
+		get_key_event(&foo, bar);
 
-		if(ioctl(ufd, UI_SET_KEYBIT, foo.code) < 0) // Enables every button required
+		if(ioctl(ufd, UI_SET_KEYBIT, foo.code) < 0) // Enables every key required
 			die("error: ioctl/setup_uinput");
 	}
 
-	if(ioctl(ufd, UI_SET_EVBIT, EV_ABS) < 0) // Creates a fake analog axis so it get
-		die("error: ioctl/setup_uinput");    // recognized by retroarch
-	if(ioctl(ufd, UI_SET_ABSBIT, ABS_X) < 0)
+	if(ioctl(ufd, UI_SET_EVBIT, EV_ABS) < 0)
 		die("error: ioctl/setup_uinput");
-	if(ioctl(ufd, UI_SET_ABSBIT, ABS_Y) < 0)
-		die("error: ioctl/setup_uinput");
+
+	for(char i = 'A'; i <= 'Z'; i++)
+	{
+		struct input_event foo;
+		struct data_packet bar;
+		bar.a_data = i;
+		get_abs_event(&foo, bar);
+
+		if(ioctl(ufd, UI_SET_KEYBIT, foo.code) < 0) // Enables every axis required
+			die("error: ioctl/setup_uinput");
+	}
 
 	struct uinput_user_dev uidev; // Device data
 	memset(&uidev, 0, sizeof(uidev));

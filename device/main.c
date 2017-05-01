@@ -353,7 +353,7 @@ main(int argc, char *argv[])
 			int device_n = 0;
 			char dev_name[20];
 
-			if((get_event(&ev, dpkg.a_data) == 0) && gamepad[device_n].status == 1)
+			if((get_key_event(&ev, dpkg) == 0) && gamepad[device_n].status == 1)
 			{
 				write(gamepad[device_n].fd, &ev, sizeof(struct input_event));
 				write(gamepad[device_n].fd, &sync, sizeof(struct input_event));
@@ -374,7 +374,7 @@ main(int argc, char *argv[])
 			}
 			else
 			{
-				vprint(2, "Invalid type 3 packet received");
+				vprint(2, "Invalid type 3 packet received\n");
 			}
 		}
 		else if(dpkg.type == 4 && dpkg.device >= '0'
@@ -383,7 +383,7 @@ main(int argc, char *argv[])
 			int device_n = dpkg.device - '0';
 			char dev_name[20];
 
-			if(gamepad[device_n].status == 1 && get_event(&ev, dpkg.a_data) == 0)
+			if(gamepad[device_n].status == 1 && get_key_event(&ev, dpkg) == 0)
 			{
 				write(gamepad[device_n].fd, &ev, sizeof(struct input_event));
 				write(gamepad[device_n].fd, &sync, sizeof(struct input_event));
@@ -405,7 +405,7 @@ main(int argc, char *argv[])
 			}
 			else
 			{
-				vprint(2, "Invalid type 4 packet received");
+				vprint(2, "Invalid type 4 packet received\n");
 			}
 		}
 		else if(dpkg.type == 5 && dpkg.device >= '0'
