@@ -66,7 +66,7 @@ main(int argc, char *argv[])
 		// getopt_long stores the option index here.
 		int option_index = 0;
 
-		int c = getopt_long(argc, argv, "b:hilp:", long_options, &option_index);
+		int c = getopt_long(argc, argv, "b:hilp:v", long_options, &option_index);
 
 		// Detect the end of the options.
 		if (c == -1)
@@ -105,6 +105,11 @@ main(int argc, char *argv[])
 			case 'p':
 			serial_tty = malloc(strlen(optarg) + 1);
 			strcpy(serial_tty, optarg);
+			break;
+
+			case 'v':
+			printf("serialjoy version %s\n", VERSION);
+			exit(EXIT_SUCCESS);
 			break;
 
 			case '?':

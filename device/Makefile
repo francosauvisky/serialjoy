@@ -1,3 +1,5 @@
+GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
+
 all: serialjoy
 
 gamepad_events.o: gamepad_events.c defs.h
@@ -10,7 +12,7 @@ simple_uinput.o: simple_uinput.c defs.h gamepad_events.o
 	gcc -c simple_uinput.c
 
 serialjoy: main.c gamepad_events.o simple_serial.o simple_uinput.o defs.h
-	gcc main.c -o serialjoy gamepad_events.o simple_serial.o simple_uinput.o
+	gcc main.c -o serialjoy gamepad_events.o simple_serial.o simple_uinput.o -DVERSION=\"$(GIT_VERSION)\"
 
 clean:
 	rm *.o
