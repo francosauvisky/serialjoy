@@ -33,13 +33,13 @@ const int key_transl_array[][2] =
 	{(int) 'E', BTN_Y},
 	{(int) 'F', BTN_B},
 	{(int) 'G', BTN_A},
-	{(int) 'H', BTN_R1},
+	{(int) 'H', BTN_TR},
 	{(int) 'I', BTN_Y},
-	{(int) 'J', BTN_L1},
+	{(int) 'J', BTN_TL},
 	{(int) 'K', BTN_MODE},
 	{(int) 'L', BTN_START},
-	{(int) 'M', BTN_R2},
-	{(int) 'N', BTN_L2},
+	{(int) 'M', BTN_TR2},
+	{(int) 'N', BTN_TL2},
 	{0,0},
 };
 
