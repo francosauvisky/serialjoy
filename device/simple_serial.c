@@ -93,7 +93,7 @@ print_char(int fd, unsigned char ctp)
 }
 
 void
-read_packet(struct data_packet *data, int fd)
+read_packet(int fd, struct data_packet *data)
 {
 	unsigned char buff = 0;
 

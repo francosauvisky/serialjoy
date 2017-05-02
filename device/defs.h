@@ -7,13 +7,13 @@ This source file is subject to the 3-Clause BSD License that is bundled
 with this source code in the file LICENSE.md
 */
 
-#ifndef gamepad_events_header
-#define gamepad_events_header
+#ifndef serialjoy_defs_header
+#define serialjoy_defs_header
 
 #include <linux/input.h>
 #include <termios.h> 
 
-//simple_serial:
+// Structs:
 
 struct data_packet
 {
@@ -24,20 +24,29 @@ struct data_packet
 	unsigned char h_data;
 };
 
+struct uinput_controller
+{
+	int status;
+	int fd;
+};
+
+// simple_serial.c:
+
 int open_port(char *, int);
 int check_conn(int, int);
 unsigned char read_char(int);
-void print_char(int fd, unsigned char);
-void read_packet(struct data_packet *, int);
+void print_char(int, unsigned char);
+void read_packet(int, struct data_packet *);
 void get_baud(char *, speed_t *);
 
-//simple_uinput:
+// simple_uinput.c:
 
-int open_uinput(void);
-void setup_uinput(int, char *);
-void destroy_uinput(int);
+void open_uinput(struct uinput_controller *);
+void setup_gamepad(struct uinput_controller *, char *);
+void destroy_uinput(struct uinput_controller *);
+void send_event(struct uinput_controller, struct input_event *);
 
-//gamepad_events:
+// gamepad_events.c:
 
 int get_key_event(struct input_event *, struct data_packet);
 int get_abs_event(struct input_event *, struct data_packet);
@@ -49,6 +58,9 @@ perror(str); \
 exit(EXIT_FAILURE); \
 } while(0)
 
+#define vprint(vlevel, format, ...)\
+if(verbose_flag >= vlevel) fprintf(stdout, format, ##__VA_ARGS__); fflush(stdout);
+
 // Parameters:
 
 #define MAX_DEV 10 // maximum number of devices
@@ -57,5 +69,12 @@ exit(EXIT_FAILURE); \
 #define MAX_CHECK_AFTER_FAIL 20 // timeout = MAX_CHECK_AFTER_FAIL * 0.5 seconds
 
 #define DEFAULT_BAUD_RATE B38400
+
+// Flags:
+
+static int verbose_flag = 1,
+	ignore_check_flag = 0,
+	legacy_flag = 0,
+	dry_run_flag = 0;
 
 #endif

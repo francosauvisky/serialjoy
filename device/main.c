@@ -17,115 +17,16 @@ with this source code in the file LICENSE.md
 
 #include "defs.h"
 
-// ######### Some useful aliases:
-
-#define vprint(vlevel, format, ...)\
-if(verbose_flag >= vlevel) fprintf(stdout, format, ##__VA_ARGS__); fflush(stdout);
-
 // ######### Signal handling:
 
 volatile int sigint_stop = 0;
-
 volatile int sigint_serial_fd = 0;
-
-void sigint_handler(int sig)
-{
-	if(sigint_serial_fd) // Stops any read cycle freezing the main loop
-	{
-		struct termios tty;
-
-		if (tcgetattr(sigint_serial_fd, &tty) < 0)
-			die("error: tcgetattr/sigint_handler");
-
-		tty.c_cc[VMIN] = 0;
-		tty.c_cc[VTIME] = 0;
-
-		if (tcsetattr(sigint_serial_fd, TCSANOW, &tty) != 0)
-			die("error: tcsetattr/sigint_handler");
-	}
-
-	sigint_stop = 1;
-}
+void sigint_handler(int sig);
 
 // ######### Printing functions
 
-void print_help()
-{
-	fprintf(stdout,
-"\n Usage: ./serialjoy [\e[4moptions\e[0m] [\e[1m--port\e[0m|\e[1m-p\e[0m] \e[4mserial_port\e[0m\n\
-\n\
-    Serialjoy is a universal and hobbist-friendly adapter of joysticks/gamepads\n\
-    on Linux using serial ports.\n\
-\n\
- Options:\n\
-      \e[1m-p\e[0m \e[4mserial_port\e[0m\n\
-      \e[1m--port\e[0m \e[4mserial_port\e[0m: Use the device file \e[4mserial_port\e[0m for communicating\n\
-                          with the adapter. If not defined, uses the last\n\
-                          argument given.\n\
-\n\
-      \e[1m-b\e[0m \e[4mbaud_rate\e[0m\n\
-      \e[1m--baud\e[0m \e[4mbaud_rate\e[0m: Sets \e[4mbaud_rate\e[0m as the baud rate of the serial port\n\
-                        The availiable values for baud rate are:\n\
-                        50, 75, 110, 134, 150, 200, 300, 600, 1200, 1800,\n\
-                        2400, 4800, 9600, 19200, 38400, 57600, 115200\n\
-                        If no baud rate is specified, then use 38400.\n\
-\n\
-      \e[1m--verbose\e[0m: Shows all that is being done while running, including\n\
-                 all the data received from the adapter.\n\
-\n\
-      \e[1m--silent\e[0m: Prints only errors\n\
-\n\
-      \e[1m--dry-run\e[0m: Does not start the main loop, only opens the serial port\n\
-                 and checks for the device, returning 0 if sucess or 1 if\n\
-                 fails. Useful for detecting in which port the adapter is\n\
-                 connected.\n\
-\n\
-      \e[1m-l\e[0m\n\
-      \e[1m--legacy\e[0m:  Initializes devices automatically\n\
-\n\
-      \e[1m-i\e[0m\n\
-      \e[1m-ignore-check\e[0m: Don't wait for the adapter to respond.\n\
-\n\
- Example:\n\
-      ./serialjoy --verbose --baud 38400 --port /dev/ttyUSB0\n\
-        Connects to the adapter at /dev/ttyUSB0 with baud rate 38400.\n\
-\n\
- See the documentation at https://github.com/francosauvisky/serialjoy for\n\
- more information\n\
-\n\
-"
-	);
-
-	exit(EXIT_SUCCESS);
-}
-
-void print_usage()
-{
-	fprintf(stderr,
-"Usage: ./serialjoy [\e[4moptions\e[0m] [\e[1m--port\e[0m|\e[1m-p\e[0m] \e[4mserial_port\e[0m\n\
-       where \e[4mserial_port\e[0m is the path of the serial port device file\n\
-\n\
-Example: ./serialjoy --baud 38400 /dev/ttyUSB0\n\
-\n\
-See ./serialjoy --help for more information\n\
-"
-	);
-
-	exit(EXIT_FAILURE);
-}
-
-// ######### Flags and structs:
-
-static int verbose_flag = 1,
-ignore_check_flag = 0,
-legacy_flag = 0,
-dry_run_flag = 0;
-
-struct uinput_controller
-{
-	int status;
-	int fd;
-};
+void print_help();
+void print_usage();
 
 // Main code:
 
@@ -265,12 +166,12 @@ main(int argc, char *argv[])
 
 		if(check_success == 1)
 		{
-			vprint(1, "Done\n");
+			vprint(2, "Done\n");
 			exit(EXIT_SUCCESS);
 		}
 		else
 		{
-			vprint(1, "Fail\n");
+			vprint(2, "Fail\n");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -281,14 +182,8 @@ main(int argc, char *argv[])
 
 	for(int i = 0; i < MAX_DEV; i++) // Initializes the gamepad struct array
 	{
-		gamepad[i].status = 0;
-		gamepad[i].fd = open_uinput();
+		open_uinput(&gamepad[i]);
 	}
-
-	memset(&sync, 0, sizeof(struct input_event)); // Synchronization input action
-	sync.type = EV_SYN;
-	sync.code = 0;
-	sync.value = 0;
 
 	vprint(2, "Done\n");
 
@@ -314,11 +209,10 @@ main(int argc, char *argv[])
 
 	vprint(2, "Running main loop:\n");
 
-	runflag = 1;
-	while(runflag == 1)
+	while(1)
 	{
 		struct data_packet dpkg;
-		read_packet(&dpkg, serial_fd); // Reads the data from serial port
+		read_packet(serial_fd, &dpkg); // Reads the data from serial port
 
 		if(dpkg.type == 1 && dpkg.device >= '0' && dpkg.device <= '9') // Device create
 		{
@@ -328,8 +222,8 @@ main(int argc, char *argv[])
 			if(gamepad[device_n].status == 0)
 			{
 				sprintf(dev_name, "serialjoy%01d", device_n);
-				setup_uinput(gamepad[device_n].fd, dev_name);
-				gamepad[device_n].status = 1;
+				setup_gamepad(&gamepad[device_n], dev_name);
+
 				vprint(1, "Created device %s\n", dev_name);
 			}
 		}
@@ -341,9 +235,7 @@ main(int argc, char *argv[])
 			if(gamepad[device_n].status == 1)
 			{
 				sprintf(dev_name, "serialjoy%01d", device_n);
-
-				destroy_uinput(gamepad[device_n].fd);
-				gamepad[device_n].status = 0;
+				destroy_uinput(&gamepad[device_n]);
 
 				vprint(1, "Destroyed device %s\n", dev_name);
 			}
@@ -355,20 +247,20 @@ main(int argc, char *argv[])
 
 			if((get_key_event(&ev, dpkg) == 0) && gamepad[device_n].status == 1)
 			{
-				write(gamepad[device_n].fd, &ev, sizeof(struct input_event));
-				write(gamepad[device_n].fd, &sync, sizeof(struct input_event));
+				send_event(gamepad[device_n], &ev);
+
 				vprint(2, "data: type 3 dev %d btn %c val %d\n", device_n, dpkg.a_data < 'a'?
 					dpkg.a_data : (dpkg.a_data - 'a'+'A'), dpkg.a_data >= 'a');
 			}
 			else if(gamepad[device_n].status == 0 && legacy_flag == 1)
 			{
 				sprintf(dev_name, "serialjoy%01d", device_n);
-				setup_uinput(gamepad[device_n].fd, dev_name);
-				gamepad[device_n].status = 1;
+				setup_gamepad(&gamepad[device_n], dev_name);
+
 				vprint(1, "Created device %s (legacy mode)\n", dev_name);
 
-				write(gamepad[device_n].fd, &ev, sizeof(struct input_event));
-				write(gamepad[device_n].fd, &sync, sizeof(struct input_event));
+				send_event(gamepad[device_n], &ev);
+
 				vprint(2, "data: type 3 dev %d btn %c val %d\n", device_n, dpkg.a_data < 'a'?
 					dpkg.a_data : (dpkg.a_data - 'a'+'A'), dpkg.a_data >= 'a');
 			}
@@ -385,8 +277,7 @@ main(int argc, char *argv[])
 
 			if(gamepad[device_n].status == 1 && get_key_event(&ev, dpkg) == 0)
 			{
-				write(gamepad[device_n].fd, &ev, sizeof(struct input_event));
-				write(gamepad[device_n].fd, &sync, sizeof(struct input_event));
+				send_event(gamepad[device_n], &ev);
 
 				vprint(2, "data: type 4 dev %c btn %c val %d\n", dpkg.device, dpkg.a_data < 'a'?
 					dpkg.a_data : (dpkg.a_data - 'a'+'A'), dpkg.a_data >= 'a');
@@ -394,12 +285,12 @@ main(int argc, char *argv[])
 			else if(gamepad[device_n].status == 0 && legacy_flag == 1)
 			{
 				sprintf(dev_name, "serialjoy%01d", device_n);
-				setup_uinput(gamepad[device_n].fd, dev_name);
-				gamepad[device_n].status = 1;
+				setup_gamepad(&gamepad[device_n], dev_name);
+
 				vprint(1, "Created device %s (legacy mode)\n", dev_name);
 
-				write(gamepad[device_n].fd, &ev, sizeof(struct input_event));
-				write(gamepad[device_n].fd, &sync, sizeof(struct input_event));
+				send_event(gamepad[device_n], &ev);
+
 				vprint(2, "data: type 3 dev %c btn %c val %d\n", dpkg.device, dpkg.a_data < 'a'?
 					dpkg.a_data : (dpkg.a_data - 'a'+'A'), dpkg.a_data >= 'a');
 			}
@@ -455,8 +346,7 @@ main(int argc, char *argv[])
 
 			vprint(1, "Destroying device %s... ", dev_name);
 
-			destroy_uinput(gamepad[i].fd);
-			gamepad[i].status = 0;
+			destroy_uinput(&gamepad[i]);
 
 			vprint(1, "Done\n", dev_name);
 		}
@@ -470,6 +360,94 @@ main(int argc, char *argv[])
 
 	return 0;
 }
+
+// ######### Printing functions
+
+void print_help()
+{
+	fprintf(stdout,
+"\n Usage: ./serialjoy [\e[4moptions\e[0m] [\e[1m--port\e[0m|\e[1m-p\e[0m] \e[4mserial_port\e[0m\n\
+\n\
+    Serialjoy is a universal and hobbist-friendly adapter of joysticks/gamepads\n\
+    on Linux using serial ports.\n\
+\n\
+ Options:\n\
+      \e[1m-p\e[0m \e[4mserial_port\e[0m\n\
+      \e[1m--port\e[0m \e[4mserial_port\e[0m: Use the device file \e[4mserial_port\e[0m for communicating\n\
+                          with the adapter. If not defined, uses the last\n\
+                          argument given.\n\
+\n\
+      \e[1m-b\e[0m \e[4mbaud_rate\e[0m\n\
+      \e[1m--baud\e[0m \e[4mbaud_rate\e[0m: Sets \e[4mbaud_rate\e[0m as the baud rate of the serial port\n\
+                        The availiable values for baud rate are:\n\
+                        50, 75, 110, 134, 150, 200, 300, 600, 1200, 1800,\n\
+                        2400, 4800, 9600, 19200, 38400, 57600, 115200\n\
+                        If no baud rate is specified, then use 38400.\n\
+\n\
+      \e[1m--verbose\e[0m: Shows all that is being done while running, including\n\
+                 all the data received from the adapter.\n\
+\n\
+      \e[1m--silent\e[0m: Prints only errors\n\
+\n\
+      \e[1m--dry-run\e[0m: Does not start the main loop, only opens the serial port\n\
+                 and checks for the device, returning 0 if sucess or 1 if\n\
+                 fails. Useful for detecting in which port the adapter is\n\
+                 connected.\n\
+\n\
+      \e[1m-l\e[0m\n\
+      \e[1m--legacy\e[0m:  Initializes devices automatically\n\
+\n\
+      \e[1m-i\e[0m\n\
+      \e[1m-ignore-check\e[0m: Don't wait for the adapter to respond.\n\
+\n\
+ Example:\n\
+      ./serialjoy --verbose --baud 38400 --port /dev/ttyUSB0\n\
+        Connects to the adapter at /dev/ttyUSB0 with baud rate 38400.\n\
+\n\
+ See the documentation at https://github.com/francosauvisky/serialjoy for\n\
+ more information\n\
+\n"
+	);
+
+	exit(EXIT_SUCCESS);
+}
+
+void print_usage()
+{
+	fprintf(stderr,
+"Usage: ./serialjoy [\e[4moptions\e[0m] [\e[1m--port\e[0m|\e[1m-p\e[0m] \e[4mserial_port\e[0m\n\
+       where \e[4mserial_port\e[0m is the path of the serial port device file\n\
+\n\
+Example: ./serialjoy --baud 38400 /dev/ttyUSB0\n\
+\n\
+See ./serialjoy --help for more information\n"
+	);
+
+	exit(EXIT_FAILURE);
+}
+
+// ######### Signal handling:
+
+void sigint_handler(int sig)
+{
+	if(sigint_serial_fd) // Stops any read cycle freezing the main loop
+	{
+		struct termios tty;
+
+		if (tcgetattr(sigint_serial_fd, &tty) < 0)
+			die("error: tcgetattr/sigint_handler");
+
+		tty.c_cc[VMIN] = 0;
+		tty.c_cc[VTIME] = 0;
+
+		if (tcsetattr(sigint_serial_fd, TCSANOW, &tty) != 0)
+			die("error: tcsetattr/sigint_handler");
+	}
+
+	sigint_stop = 1;
+}
+
+// ######### Sketches:
 
 /*
 # Communications protocol sketch:
