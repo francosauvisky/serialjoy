@@ -17,7 +17,7 @@ with this source code in the file LICENSE.md
 
 #include "defs.h"
 
-// ######### Signal handling:
+// ######### Signal handling
 
 volatile int sigint_stop = 0;
 volatile int sigint_serial_fd = 0;
@@ -33,7 +33,7 @@ void print_usage();
 int
 main(int argc, char *argv[])
 {
-	int serial_fd, runflag, nullcount = 0, check_flag = 0;
+	int serial_fd, nullcount = 0;
 	speed_t baud_rate = 0;
 	char *serial_tty = NULL;
 	struct input_event ev, sync;
@@ -214,7 +214,8 @@ main(int argc, char *argv[])
 		struct data_packet dpkg;
 		read_packet(serial_fd, &dpkg); // Reads the data from serial port
 
-		if(dpkg.type == 1 && dpkg.device >= '0' && dpkg.device <= '9') // Device create
+		// Device create
+		if(dpkg.type == 1 && dpkg.device >= '0' && dpkg.device <= '9')
 		{
 			int device_n = dpkg.device - '0';
 			char dev_name[20];
@@ -227,7 +228,9 @@ main(int argc, char *argv[])
 				vprint(1, "Created device %s\n", dev_name);
 			}
 		}
-		else if(dpkg.type == 2 && dpkg.device >= '0' && dpkg.device <= '9') // Device destroy
+
+		// Device destroy
+		else if(dpkg.type == 2 && dpkg.device >= '0' && dpkg.device <= '9')
 		{
 			int device_n = dpkg.device - '0';
 			char dev_name[20];
@@ -240,7 +243,9 @@ main(int argc, char *argv[])
 				vprint(1, "Destroyed device %s\n", dev_name);
 			}
 		}
-		else if(dpkg.type == 3 && dpkg.a_data != 0) // Send data to device 0
+
+		// Send simple data to device 0
+		else if(dpkg.type == 3 && dpkg.a_data != 0)
 		{
 			int device_n = 0;
 			char dev_name[20];
@@ -269,8 +274,10 @@ main(int argc, char *argv[])
 				vprint(2, "Invalid type 3 packet received\n");
 			}
 		}
+
+		// Send simple data to device dpkg.device
 		else if(dpkg.type == 4 && dpkg.device >= '0'
-			&& dpkg.device <= '9' && dpkg.a_data != 0) // Send data to device dpkg.device
+			&& dpkg.device <= '9' && dpkg.a_data != 0)
 		{
 			int device_n = dpkg.device - '0';
 			char dev_name[20];
@@ -291,7 +298,7 @@ main(int argc, char *argv[])
 
 				send_event(gamepad[device_n], &ev);
 
-				vprint(2, "data: type 3 dev %c btn %c val %d\n", dpkg.device, dpkg.a_data < 'a'?
+				vprint(2, "data: type 4 dev %c btn %c val %d\n", dpkg.device, dpkg.a_data < 'a'?
 					dpkg.a_data : (dpkg.a_data - 'a'+'A'), dpkg.a_data >= 'a');
 			}
 			else
@@ -299,13 +306,42 @@ main(int argc, char *argv[])
 				vprint(2, "Invalid type 4 packet received\n");
 			}
 		}
+
+		// Send complex data to device dpkg.device
 		else if(dpkg.type == 5 && dpkg.device >= '0'
 			&& dpkg.device <= '9' && dpkg.a_data != 0
-			&& dpkg.l_data != 0 && dpkg.h_data != 0) // Send complex data to device dpkg.device
+			&& dpkg.l_data != 0 && dpkg.h_data != 0)
 		{
-			vprint(2, "Type 5 packet received [UNIMPLEMENTED]\n");
+			int device_n = dpkg.device - '0';
+			char dev_name[20];
+
+			if(gamepad[device_n].status == 1 && get_abs_event(&ev, dpkg) == 0)
+			{
+				send_event(gamepad[device_n], &ev);
+
+				vprint(2, "data: type 5 dev %c btn %c val %d\n", dpkg.device, dpkg.a_data < 'a'?
+					dpkg.a_data : (dpkg.a_data - 'a'+'A'), dpkg.a_data >= 'a');
+			}
+			else if(gamepad[device_n].status == 0 && legacy_flag == 1)
+			{
+				sprintf(dev_name, "serialjoy%01d", device_n);
+				setup_gamepad(&gamepad[device_n], dev_name);
+
+				vprint(1, "Created device %s (legacy mode)\n", dev_name);
+
+				send_event(gamepad[device_n], &ev);
+
+				vprint(2, "data: type 5 dev %c btn %c val %d\n", dpkg.device, dpkg.a_data < 'a'?
+					dpkg.a_data : (dpkg.a_data - 'a'+'A'), dpkg.a_data >= 'a');
+			}
+			else
+			{
+				vprint(2, "Invalid type 5 packet received\n");
+			}
 		}
-		else // Not received any valid data
+
+		// Not received any valid data
+		else
 		{
 			nullcount++;
 
@@ -325,10 +361,12 @@ main(int argc, char *argv[])
 			}
 		}
 
-		if(dpkg.type != 0) // Clears counter if data is received
+		// Clears counter if data is received
+		if(dpkg.type != 0)
 			nullcount = 0;
 
-		if(sigint_stop) // If sigint, then stop run
+		// If sigint (^C, Ctrl + C), then stop run
+		if(sigint_stop)
 		{
 			vprint(1, "\n");
 			break;
@@ -426,7 +464,7 @@ See ./serialjoy --help for more information\n"
 	exit(EXIT_FAILURE);
 }
 
-// ######### Signal handling:
+// ######### Signal handling
 
 void sigint_handler(int sig)
 {
