@@ -60,6 +60,7 @@ main(int argc, char *argv[])
 			{"ignore-check", no_argument, 0, 'i'},
 			{"legacy", no_argument, 0, 'l'},
 			{"port", required_argument, 0, 'p'},
+			{"version", no_argument, 0, 'v'},
 			{0, 0, 0, 0}
 		};
 
@@ -430,7 +431,7 @@ void print_help()
       \e[1m--verbose\e[0m: Shows all that is being done while running, including\n\
                  all the data received from the adapter.\n\
 \n\
-      \e[1m--silent\e[0m: Prints only errors\n\
+      \e[1m--silent\e[0m: Prints only errors.\n\
 \n\
       \e[1m--dry-run\e[0m: Does not start the main loop, only opens the serial port\n\
                  and checks for the device, returning 0 if sucess or 1 if\n\
@@ -438,19 +439,22 @@ void print_help()
                  connected.\n\
 \n\
       \e[1m-l\e[0m\n\
-      \e[1m--legacy\e[0m:  Initializes devices automatically\n\
+      \e[1m--legacy\e[0m:  Initializes devices automatically.\n\
 \n\
       \e[1m-i\e[0m\n\
       \e[1m-ignore-check\e[0m: Don't wait for the adapter to respond.\n\
+\n\
+      \e[1m-v\e[0m\n\
+      \e[1m--version\e[0m: Prints \"serialjoy version %s\".\n\
 \n\
  Example:\n\
       ./serialjoy --verbose --baud 38400 --port /dev/ttyUSB0\n\
         Connects to the adapter at /dev/ttyUSB0 with baud rate 38400.\n\
 \n\
  See the documentation at https://github.com/francosauvisky/serialjoy for\n\
- more information\n\
-\n"
-	);
+ more information.\n\
+\n",
+	VERSION);
 
 	exit(EXIT_SUCCESS);
 }
