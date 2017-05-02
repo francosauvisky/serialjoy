@@ -93,7 +93,7 @@ print_char(int fd, unsigned char ctp)
 }
 
 void
-read_packet(struct data_packet *data, int fd)
+read_packet(int fd, struct data_packet *data)
 {
 	unsigned char buff = 0;
 
@@ -103,37 +103,37 @@ read_packet(struct data_packet *data, int fd)
 
 	if(buff == '!') // Then sort it
 	{
-		(*data).type = 1;
-		(*data).device = read_char(fd); // "!n": create device
+		data->type = 1;
+		data->device = read_char(fd); // "!n": create device
 	}
 	else if(buff == '^')
 	{
-		(*data).type = 2;
-		(*data).device = read_char(fd); // "^n": destroy device
+		data->type = 2;
+		data->device = read_char(fd); // "^n": destroy device
 	}
 	else if((buff >= '0') && (buff <= '9'))
 	{
-		(*data).device = buff;
+		data->device = buff;
 
 		buff = read_char(fd);
 
 		if(buff == ':')
 		{
-			(*data).type = 5;
-			(*data).a_data = read_char(fd);
-			(*data).l_data = read_char(fd);
-			(*data).h_data = read_char(fd); // "n:axx": long action
+			data->type = 5;
+			data->a_data = read_char(fd);
+			data->l_data = read_char(fd);
+			data->h_data = read_char(fd); // "n:axx": long action
 		}
 		else
 		{
-			(*data).type = 4;
-			(*data).a_data = buff; // "na": short action
+			data->type = 4;
+			data->a_data = buff; // "na": short action
 		}
 	}
 	else if( (buff >= 'a' && buff <= 'z') || (buff >= 'A' && buff <= 'Z') )
 	{
-		(*data).type = 3;
-		(*data).a_data = buff; // "a": legacy mode, action to dev 0
+		data->type = 3;
+		data->a_data = buff; // "a": legacy mode, action to dev 0
 	}
 }
 

@@ -18,65 +18,90 @@ with this source code in the file LICENSE.md
 
 #include "defs.h"
 
-int
-open_uinput()
+void
+open_uinput(struct uinput_controller *gamepad)
 {
-	int fd;
+	gamepad->fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
 
-	fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
-
-	if(fd < 0) // If it fails
+	if(gamepad->fd < 0) // If it fails
 	{
-		fd = open("/dev/input/uinput", O_WRONLY | O_NONBLOCK);
+		gamepad->fd = open("/dev/input/uinput", O_WRONLY | O_NONBLOCK);
 	}
-	if(fd < 0)
+	if(gamepad->fd < 0)
 		die("error: open/open_uinput");
 
-	return fd;
+	gamepad->status = 0;
 }
 
 void
-setup_uinput(int ufd, char *dev_name)
+setup_gamepad(struct uinput_controller *gamepad, char *dev_name)
 {
-	if(ioctl(ufd, UI_SET_EVBIT, EV_KEY) < 0) // Enables EV_KEY events
-		die("error: ioctl/setup_uinput");
-	if(ioctl(ufd, UI_SET_EVBIT, EV_SYN) < 0) // Enables EV_SYN events
+	if(ioctl(gamepad->fd, UI_SET_EVBIT, EV_SYN) < 0) // Enables EV_SYN events
 		die("error: ioctl/setup_uinput");
 
+	if(ioctl(gamepad->fd, UI_SET_EVBIT, EV_KEY) < 0) // Enables EV_KEY events
+		die("error: ioctl/setup_uinput");
 	for(char i = 'A'; i <= 'Z'; i++)
 	{
 		struct input_event foo;
-		get_event(&foo, i);
+		struct data_packet bar;
+		bar.a_data = i;
+		get_key_event(&foo, bar);
 
-		if(ioctl(ufd, UI_SET_KEYBIT, foo.code) < 0) // Enables every button required
+		if(ioctl(gamepad->fd, UI_SET_KEYBIT, foo.code) < 0) // Enables every key required
 			die("error: ioctl/setup_uinput");
 	}
 
-	if(ioctl(ufd, UI_SET_EVBIT, EV_ABS) < 0) // Creates a fake analog axis so it get
-		die("error: ioctl/setup_uinput");    // recognized by retroarch
-	if(ioctl(ufd, UI_SET_ABSBIT, ABS_X) < 0)
+	if(ioctl(gamepad->fd, UI_SET_EVBIT, EV_ABS) < 0)
 		die("error: ioctl/setup_uinput");
-	if(ioctl(ufd, UI_SET_ABSBIT, ABS_Y) < 0)
-		die("error: ioctl/setup_uinput");
+	for(char i = 'A'; i <= 'Z'; i++)
+	{
+		struct input_event foo;
+		struct data_packet bar;
+		bar.a_data = i;
+		get_abs_event(&foo, bar);
+
+		if(ioctl(gamepad->fd, UI_SET_ABSBIT, foo.code) < 0) // Enables every axis required
+			die("error: ioctl/setup_uinput");
+	}
 
 	struct uinput_user_dev uidev; // Device data
 	memset(&uidev, 0, sizeof(uidev));
+
 	snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, dev_name); // Device name
 	uidev.id.bustype = BUS_USB;
 	uidev.id.vendor  = 0x1;
 	uidev.id.product = 0x1;
 	uidev.id.version = 1;
 
-	if(write(ufd, &uidev, sizeof(uidev)) < 0) // Writes the device data
+	if(write(gamepad->fd, &uidev, sizeof(uidev)) < 0) // Writes the device data
 		die("error: write/setup_uinput");
 
-	if(ioctl(ufd, UI_DEV_CREATE) < 0) // And creates the device
+	if(ioctl(gamepad->fd, UI_DEV_CREATE) < 0) // And creates the device
 		die("error: ioctl/setup_uinput");
+
+	gamepad->status = 1;
 }
 
 void
-destroy_uinput(int ufd)
+destroy_uinput(struct uinput_controller *gamepad)
 {
-	if(ioctl(ufd, UI_DEV_DESTROY) < 0)
+	if(ioctl(gamepad->fd, UI_DEV_DESTROY) < 0)
 		die("error: ioctl/setup_uinput");
+
+	gamepad->status = 0;
+}
+
+void
+send_event(struct uinput_controller gamepad, struct input_event *ev)
+{
+	struct input_event sync;
+
+	memset(&sync, 0, sizeof(struct input_event)); // Synchronization input action
+	sync.type = EV_SYN;
+	sync.code = 0;
+	sync.value = 0;
+
+	write(gamepad.fd, ev, sizeof(struct input_event));
+	write(gamepad.fd, &sync, sizeof(struct input_event));
 }

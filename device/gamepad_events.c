@@ -24,7 +24,7 @@ Lowercase -> Button relased
 
 #include "defs.h"
 
-const int transl_array[][2] =
+const int key_transl_array[][2] =
 {
 	{(int) 'A', BTN_DPAD_UP},
 	{(int) 'B', BTN_DPAD_DOWN},
@@ -41,24 +41,59 @@ const int transl_array[][2] =
 	{0,0},
 };
 
+const int abs_transl_array[][2] =
+{
+	{(int) 'A', ABS_X},
+	{(int) 'B', ABS_Y},
+	{(int) 'C', ABS_RX},
+	{(int) 'D', ABS_RY},
+	{0,0},
+};
+
 int
-get_event(struct input_event *ev, unsigned char action_byte)
+get_key_event(struct input_event *ev, struct data_packet pkg)
 {
 	memset(ev, 0, sizeof(struct input_event));
 
-	(*ev).type = EV_KEY;
-	(*ev).value = action_byte >= 'a'? 1 : 0;
+	ev->type = EV_KEY;
+	ev->value = pkg.a_data >= 'a'? 1 : 0;
 
-	if(action_byte >= 'a')
-		action_byte -= 'a' - 'A';
+	if(pkg.a_data >= 'a')
+		pkg.a_data -= 'a' - 'A';
 
 	int done_flag = 0;
 
-	for(int i = 0; transl_array[i][0] != 0; i++)
+	for(int i = 0; key_transl_array[i][0] != 0; i++)
 	{
-		if((int) action_byte == transl_array[i][0])
+		if((int) pkg.a_data == key_transl_array[i][0])
 		{
-			(*ev).code = transl_array[i][1];
+			ev->code = key_transl_array[i][1];
+			done_flag = 1;
+			break;
+		}
+	}
+
+	if(done_flag == 0)
+		return 1;
+	else
+		return 0;
+}
+
+int
+get_abs_event(struct input_event *ev, struct data_packet pkg)
+{
+	memset(ev, 0, sizeof(struct input_event));
+
+	ev->type = EV_ABS;
+	ev->value = (int) ((pkg.l_data & 0x0F) + ((pkg.h_data & 0x0F) << 4));
+
+	int done_flag = 0;
+
+	for(int i = 0; abs_transl_array[i][0] != 0; i++)
+	{
+		if((int) pkg.a_data == abs_transl_array[i][0])
+		{
+			ev->code = abs_transl_array[i][1];
 			done_flag = 1;
 			break;
 		}
