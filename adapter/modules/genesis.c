@@ -69,19 +69,19 @@ genesis_set_pinmap(struct genesis_controller *con,
 	               volatile uint8_t *sel_port,
 	               uint8_t pin_sel)
 {
-	(*con).input_ddr = input_ddr,
-	(*con).input_pin = input_pin,
-	(*con).input_port = input_port,
-	(*con).pins_d[0] = input_pin_d0;
-	(*con).pins_d[1] = input_pin_d1;
-	(*con).pins_d[2] = input_pin_d2;
-	(*con).pins_d[3] = input_pin_d3;
-	(*con).pins_d[4] = input_pin_d4;
-	(*con).pins_d[5] = input_pin_d5;
+	con->input_ddr = input_ddr,
+	con->input_pin = input_pin,
+	con->input_port = input_port,
+	con->pins_d[0] = input_pin_d0;
+	con->pins_d[1] = input_pin_d1;
+	con->pins_d[2] = input_pin_d2;
+	con->pins_d[3] = input_pin_d3;
+	con->pins_d[4] = input_pin_d4;
+	con->pins_d[5] = input_pin_d5;
 
-	(*con).sel_ddr = sel_ddr;
-	(*con).sel_port = sel_port;
-	(*con).pin_sel = pin_sel;
+	con->sel_ddr = sel_ddr;
+	con->sel_port = sel_port;
+	con->pin_sel = pin_sel;
 }
 
 void
@@ -139,22 +139,22 @@ genesis_setup(struct genesis_controller *con)
 {
 	uint8_t data_sel, data_tri, count = 0;
 
-	*(*con).input_ddr &= ~(_BV((*con).pins_d[0]) |
-	                      _BV((*con).pins_d[1]) |
-	                      _BV((*con).pins_d[2]) |
-	                      _BV((*con).pins_d[3]) |
-	                      _BV((*con).pins_d[4]) |
-	                      _BV((*con).pins_d[5])); // Set pins connected to D0-D5 pins as input
+	*con->input_ddr &= ~(_BV(con->pins_d[0]) |
+	                      _BV(con->pins_d[1]) |
+	                      _BV(con->pins_d[2]) |
+	                      _BV(con->pins_d[3]) |
+	                      _BV(con->pins_d[4]) |
+	                      _BV(con->pins_d[5])); // Set pins connected to D0-D5 pins as input
 
-	*(*con).input_port |= (_BV((*con).pins_d[0]) |
-	                      _BV((*con).pins_d[1]) |
-	                      _BV((*con).pins_d[2]) |
-	                      _BV((*con).pins_d[3]) |
-	                      _BV((*con).pins_d[4]) |
-	                      _BV((*con).pins_d[5])); // And with pullups
+	*con->input_port |= (_BV(con->pins_d[0]) |
+	                      _BV(con->pins_d[1]) |
+	                      _BV(con->pins_d[2]) |
+	                      _BV(con->pins_d[3]) |
+	                      _BV(con->pins_d[4]) |
+	                      _BV(con->pins_d[5])); // And with pullups
 
-	*(*con).sel_ddr |= _BV((*con).pin_sel); // Sets pin connected to sel as output
-	*(*con).sel_port |= _BV((*con).pin_sel); // and high (logic 1)
+	*con->sel_ddr |= _BV(con->pin_sel); // Sets pin connected to sel as output
+	*con->sel_port |= _BV(con->pin_sel); // and high (logic 1)
 
 	// Detecting if it's a 3 or 6 buttons gamepad:
 	// Don't press any buttons! (specially MODE and X)
@@ -165,34 +165,34 @@ genesis_setup(struct genesis_controller *con)
 	// unsigned char testdata[10];
 
 	// testdata[0] = genesis_get_data(*con, 0);
-	// *(*con).sel_port &= ~_BV((*con).pin_sel);
+	// *con->sel_port &= ~_BV(con->pin_sel);
 	// cdelay();
 	// testdata[1] = genesis_get_data(*con, 0);
-	// *(*con).sel_port |= _BV((*con).pin_sel);
+	// *con->sel_port |= _BV(con->pin_sel);
 	// cdelay();
 	// testdata[2] = genesis_get_data(*con, 0);
-	// *(*con).sel_port &= ~_BV((*con).pin_sel);
+	// *con->sel_port &= ~_BV(con->pin_sel);
 	// cdelay();
 	// testdata[3] = genesis_get_data(*con, 0);
-	// *(*con).sel_port |= _BV((*con).pin_sel);
+	// *con->sel_port |= _BV(con->pin_sel);
 	// cdelay();
 	// testdata[4] = genesis_get_data(*con, 0);
-	// *(*con).sel_port &= ~_BV((*con).pin_sel);
+	// *con->sel_port &= ~_BV(con->pin_sel);
 	// cdelay();
 	// testdata[5] = genesis_get_data(*con, 0);
-	// *(*con).sel_port |= _BV((*con).pin_sel);
+	// *con->sel_port |= _BV(con->pin_sel);
 	// cdelay();
 	// testdata[6] = genesis_get_data(*con, 0);
-	// *(*con).sel_port &= ~_BV((*con).pin_sel);
+	// *con->sel_port &= ~_BV(con->pin_sel);
 	// cdelay();
 	// testdata[7] = genesis_get_data(*con, 0);
-	// *(*con).sel_port |= _BV((*con).pin_sel);
+	// *con->sel_port |= _BV(con->pin_sel);
 	// cdelay();
 	// testdata[8] = genesis_get_data(*con, 0);
-	// *(*con).sel_port &= ~_BV((*con).pin_sel);
+	// *con->sel_port &= ~_BV(con->pin_sel);
 	// cdelay();
 	// testdata[9] = genesis_get_data(*con, 0);
-	// *(*con).sel_port |= _BV((*con).pin_sel);
+	// *con->sel_port |= _BV(con->pin_sel);
 	// cdelay();
 
 	// for(uint8_t i = 0; i < 10; i++)
@@ -210,19 +210,19 @@ genesis_setup(struct genesis_controller *con)
 		genesis_pulse_sel(*con, 1);
 	} while ( ( (data_sel & 0x0F) != 0x00) && (count++ < 50) );
 
-	(*con).conf = 0x00;
+	con->conf = 0x00;
 
 	if(count >= 50)
 	{
-		(*con).conf &= ~0x01;
+		con->conf &= ~0x01;
 		return;
 	}
 	else
 	{
-		(*con).conf |= 0x01;
+		con->conf |= 0x01;
 	}
 
-	(*con).conf |= dev_count << 4;
+	con->conf |= dev_count << 4;
 
 	char dev_init_str[] = "!\0";
 	dev_init_str[1] = '0' + dev_count++;
@@ -230,18 +230,18 @@ genesis_setup(struct genesis_controller *con)
 
 	if((data_tri & 0x0F) == 0x0F)
 	{
-		(*con).conf |= 0x02;
+		con->conf |= 0x02;
 	}
 	else
 	{
-		(*con).conf &= ~0x02;
+		con->conf &= ~0x02;
 	}
 
 	_delay_ms(50);
 
 	genesis_read_state(con);
 
-	(*con).old_state = (*con).state;
+	con->old_state = con->state;
 }
 
 void
@@ -249,19 +249,19 @@ genesis_read_state(struct genesis_controller *con)
 {
 	uint8_t data1, data2, data3 = 0;
 
-	(*con).state = 0;
+	con->state = 0;
 
-	if((*con).conf == 0)
+	if(con->conf == 0)
 	{
 		return;
 	}
 
-	if((*con).conf & 0x02 != 0) // The order is important!
+	if(con->conf & 0x02 != 0)
 		data3 = genesis_get_data(*con, 2);
 	data2 = genesis_get_data(*con, 1);
 	data1 = genesis_get_data(*con, 0);
 
-	(*con).state = (data1 & 0x0F) | (data2 & 0x10) | (data1 & 0x30) << 1 | (data3 & 0x0F) << 7 | (data2 & 0x20) << 6;
+	con->state = (data1 & 0x0F) | (data2 & 0x10) | (data1 & 0x30) << 1 | (data3 & 0x0F) << 7 | (data2 & 0x20) << 6;
 }
 
 void
@@ -269,21 +269,21 @@ genesis_update_state(struct genesis_controller *con)
 {
 	for(uint8_t i = 0; i <= 12; i++)
 	{
-		if((*con).state != (*con).old_state)
+		if(con->state != con->old_state)
 		{
-			if(((*con).state & _BV(i)) != ((*con).old_state & _BV(i)))
+			if((con->state & _BV(i)) != (con->old_state & _BV(i)))
 			{
-				if(((*con).state & _BV(i)) != 0)
+				if((con->state & _BV(i)) != 0)
 				{
 					loop_until_bit_is_set(UCSRA, UDRE);
-					UDR = '0' + ((*con).conf >> 4);
+					UDR = '0' + (con->conf >> 4);
 					loop_until_bit_is_set(UCSRA, UDRE);
 					UDR = 'a' + (unsigned char) i;
 				}
 				else
 				{
 					loop_until_bit_is_set(UCSRA, UDRE);
-					UDR = '0' + ((*con).conf >> 4);
+					UDR = '0' + (con->conf >> 4);
 					loop_until_bit_is_set(UCSRA, UDRE);
 					UDR = 'A' + (unsigned char) i;
 				}
@@ -291,5 +291,5 @@ genesis_update_state(struct genesis_controller *con)
 		}
 	}
 
-	(*con).old_state = (*con).state;
+	con->old_state = con->state;
 }

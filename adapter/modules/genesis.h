@@ -33,16 +33,16 @@ void genesis_read_state(struct genesis_controller *);
 void genesis_update_state(struct genesis_controller *);
 
 void
-genesis_set_pinmap(struct genesis_controller *con,
-	               volatile uint8_t *input_ddr,
-	               volatile uint8_t *input_pin,
-	               volatile uint8_t *input_port,
-	               uint8_t input_pin_d0,
-	               uint8_t input_pin_d1,
-	               uint8_t input_pin_d2,
-	               uint8_t input_pin_d3,
-	               uint8_t input_pin_d4,
-	               uint8_t input_pin_d5,
-	               volatile uint8_t *sel_ddr,
-	               volatile uint8_t *sel_port,
-	               uint8_t pin_sel);
+genesis_set_pinmap(struct genesis_controller ,* //con
+	               volatile uint8_t ,* //input_ddr
+	               volatile uint8_t ,* //input_pin
+	               volatile uint8_t ,* //input_port
+	               uint8_t,  //input_pin_d0
+	               uint8_t,  //input_pin_d1
+	               uint8_t,  //input_pin_d2
+	               uint8_t,  //input_pin_d3
+	               uint8_t,  //input_pin_d4
+	               uint8_t,  //input_pin_d5
+	               volatile uint8_t ,* //sel_ddr
+	               volatile uint8_t ,* //sel_port
+	               uint8_t)  //pin_sel
