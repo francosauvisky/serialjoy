@@ -14,6 +14,10 @@ The *adapter* is the physical layer that interfaces with a game controller and s
 
 The *device* is the software that your computer will be running when the *adapter* is connected. It will translate the data received on the serial port to a virtual joystick using `uinput`, allowing you to generate real input events with your physical controller.
 
+### Some implementation details
+
+The device talks to the adapter via a serial port (like /dev/ttyUSB0 if you're using an USB-RS232 adapter) using only printable characters that represent the state of a button (uppercase is pressed, lowercase is released) or some other data (analog axes, create controller, etc). More details on the communication protocol is described in a comment at the end of `/device/main.c` and is subject to changes.
+
 ## Contributing
 
 Feel free to contribute in any way you can. The project is still young, so new ideas are welcome (constructive criticism is also welcome). Writing documentation is a must, as I haven't got the time to do that yet. If you want to become an active developer or have some other question, please contact me at my email: [francosauvisky+serialjoy@gmail.com](mailto:francosauvisky+serialjoy@gmail.com).
