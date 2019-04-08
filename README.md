@@ -16,7 +16,7 @@ The *device* is the software that your computer will be running when the *adapte
 
 ### Some implementation details
 
-The device talks to the adapter via a serial port (like /dev/ttyUSB0 if you're using an USB-RS232 adapter) using only printable characters that represent the state of a button (uppercase is pressed, lowercase is released) or some other data (analog axes, create controller, etc). More details on the communication protocol is described in a comment at the end of `/device/main.c` and is subject to changes.
+The device talks to the adapter via a serial port (like `/dev/ttyUSB0` if you're using an USB-RS232 adapter) using only printable characters that represent the state of a button (uppercase is pressed, lowercase is released) or some other data (analog axes, create controller, etc). More details on the communication protocol is described in a comment at the end of `/device/main.c` and is subject to changes.
 
 ## Contributing
 
