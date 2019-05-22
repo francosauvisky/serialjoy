@@ -33,14 +33,12 @@ Another way to contribute to this project is to donate/lend gamepads so I can pr
 
 ### Actions
 
-- Simple actions "a":
-
-a = [a..z]: Buttons presses (up to 26 buttons)
+- Simple actions "a":  
+a = [a..z]: Buttons presses (up to 26 buttons)  
 a = [A..Z]: Buttons relase (up to 26 buttons)
 
-- Complex actions "axx":
-
-a = [a..zA..Z]: Action code (defined afterwards), for example analog axis
+- Complex actions "axx":  
+a = [a..zA..Z]: Action code (defined afterwards), for example analog axis  
 x = [0x40..0x5F]: Action data (less significant 5 bits of each char) = 10 bits
 
 ### Packet formats
