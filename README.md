@@ -16,7 +16,7 @@ The *device* is the software that your computer will be running when the *adapte
 
 ### Some implementation details
 
-The device talks to the adapter via a serial port (like `/dev/ttyUSB0` if you're using an USB-RS232 adapter) using only printable characters that represent the state of a button (uppercase is pressed, lowercase is released) or some other data (analog axes, create controller, etc). More details on the communication protocol is described in a comment at the end of `/device/main.c` and is subject to changes.
+The device talks to the adapter via a serial port (like `/dev/ttyUSB0` if you're using an USB-RS232 adapter) using only printable characters that represent the state of a button (uppercase is pressed, lowercase is released) or some other data (analog axes, create controller, etc). More details on the communication protocol is described in a comment at the end of this file and is subject to changes.
 
 ## Contributing
 
@@ -32,9 +32,7 @@ Another way to contribute to this project is to donate/lend gamepads so I can pr
 
 ### Device
 
-- Add multiple controllers/devices with a single serial port [Done!]
 - Use a simpler received data <-> input action dictionary, not a switch statement within a function within a *.c file (maybe with #define or an external configuration file)
-- Use commands from the adapter to control the device (for example, to add another controller, or to close the device) [Done!]
 - Add analog axes and more buttons compatibility (using data packets)
 (the last 3 items can be summarized in: use a better data transmission protocol)
 - Use argp or getopt to read the command-line arguments
@@ -43,10 +41,46 @@ Another way to contribute to this project is to donate/lend gamepads so I can pr
 
 ### Adapter
 
-- Add a second controller [Done!]
-- Simplify the controller drivers (de-hardwire them) [Done!]
+- Simplify the controller drivers (de-hardwire them) [Done!(?)]
 - Automatic identification of the controller (s)
 - Draw schematics and PCBs.
 - Better control of the device: initializing and closing controllers, etc [Partially done!]
 - More generic code: using structs for the status, analog axis, etc
 - (far) Support for more controller types (NES, SNES, PlayStation, Xbox, etc)
+
+## Communication Protocol
+
+- Valid characters: Every printable character (from 0x20 up to 0x7E)
+- Packets size: Sequences of 1 to 5 chars/bytes.
+
+### Actions
+
+- Simple actions "a":
+a = [a..z]: Buttons presses (up to 26 buttons)
+a = [A..Z]: Buttons relase (up to 26 buttons)
+
+- Complex actions "axx":
+a = [a..zA..Z]: Action code (defined afterwards), for example analog axis
+x = [0x40..0x5F]: Action data (less significant 5 bits of each char) = 10 bits
+
+### Packet formats
+
+- From adapter to device:
+1. "!n", where n = [0..9]: Create device n
+2. "^n", where n = [0..9]: Destroy device n
+3. "a", where a = [a..zA..Z]: Send simple action a to device 0 (LEGACY)
+4. "na", where n = [0..9] and a = [a..zA..Z]: Send simple action a to device n
+5. "n:axx" where n = [0..9], a = [a..zA..Z] and each x = [0x40..0x5F]: Send complex action axx to device n
+6. "s" where s is a null-terminated string: Preprogrammed string (**only** if device asks)
+
+- From device to adapter:
+1. "d": Force adapter to (re)create devices
+2. "v": Return preprogrammed string
+
+- Handshake protocol
+1. "#": OK
+2. "%": Not OK
+3. "?": Are you there? (return OK)
+
+When adapter sends "!n", device must answer OK when sucessful.
+If adapter doesn't responds to "?", then go to legacy mode
