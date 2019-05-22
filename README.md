@@ -18,7 +18,7 @@ PS: Although the project is composed of two parts, the name `serialjoy` will alw
 
 ### Some implementation details
 
-The device talks to the adapter via a serial port (like `/dev/ttyUSB0` if you're using an USB-RS232 adapter) using only printable characters that represent the state of a button (uppercase is pressed, lowercase is released) or some other data (analog axes, create controller, etc). More details on the communication protocol is described at the end of this file and is subject to changes.
+The device talks to the adapter via a serial port (like `/dev/ttyUSB0` if you're using an USB-RS232 adapter) using only printable characters that represent the state of a button (uppercase is pressed, lowercase is released) or some other data (analog axes, create controller, etc). More details on the communication protocol is described below and is subject to changes.
 
 ## Contributing
 
